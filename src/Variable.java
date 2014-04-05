@@ -9,6 +9,7 @@ public class Variable implements Comparable<Variable> {
 	int index = -1;
 	
 	LinkedList<Variable> neighbors = new LinkedList<>();
+	LinkedList<Variable> neighborsBackup;
 	LinkedList<Factor> factorMentionThis = new LinkedList<>();
 	
 	public Variable(int domainSize) {
@@ -41,6 +42,11 @@ public class Variable implements Comparable<Variable> {
 		neighbors.clear();
 	}
 	
+	public void setSoftEvidence(int value) {
+		this.isEvdence = true;
+		this.value = value;
+	}
+	
 	public int degree() {
 		return neighbors.size();
 	}
@@ -52,8 +58,10 @@ public class Variable implements Comparable<Variable> {
 	}
 	
 	public void addNeighbor(Variable neigh) {
-		if(!neighbors.contains(neigh))
+		if(!neighbors.contains(neigh)) {
 			neighbors.add(neigh);
+			neighborsBackup.add(neigh);
+		}
 	}
 	
 	public void removeNeighbor(Variable nei) {
