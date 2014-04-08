@@ -70,6 +70,11 @@ public class Eliminator {
 		
 		for(Factor factor : factorPrime) {
 			for(Variable var : factor.variables) {
+				// escape evidence variables
+				if(var.isEvidence) {
+					continue;
+				}
+				
 				if(!set.contains(var))
 					set.add(var);
 			}
@@ -111,8 +116,8 @@ public class Eliminator {
 				
 				int xTableIndex = xFactor.variableValueToTableIndex(primeValues);
 				// the multiply two double;
-				fRet.table.set(z, fRet.table.get(z) * xFactor.table.get(xTableIndex));
 				
+				fRet.table.set(z, fRet.table.get(z) * xFactor.table.get(xTableIndex));			
 			}
 		}
 		
@@ -143,6 +148,10 @@ public class Eliminator {
 		for(int i = 0; i < factor.variables.size(); i++) {
 			Variable y = factor.variables.get(i);
 			numTmp /= y.domainSize();
+			
+			if(y.isEvidence) {
+				continue;
+			}
 			
 			if(y != var) {
 				varsAfterElim.add(y);

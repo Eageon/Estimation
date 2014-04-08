@@ -3,7 +3,7 @@ import java.util.LinkedList;
 
 public class Variable implements Comparable<Variable> {
 	int d;
-	boolean isEvdence = false;
+	boolean isEvidence = false;
 	int value;
 	
 	int index = -1;
@@ -14,7 +14,7 @@ public class Variable implements Comparable<Variable> {
 	
 	public Variable(int domainSize) {
 		d = domainSize;
-		isEvdence = false;
+		isEvidence = false;
 		value = -1;
 	}
 	
@@ -23,7 +23,7 @@ public class Variable implements Comparable<Variable> {
 	}
 	
 	public void setEvidence(int observedValue) {
-		isEvdence = true;
+		isEvidence = true;
 		value = observedValue;
 		
 		LinkedList<Factor> factorMentionThisCopy = new LinkedList<>(factorMentionThis);
@@ -43,7 +43,7 @@ public class Variable implements Comparable<Variable> {
 	}
 	
 	public void setSoftEvidence(int value) {
-		this.isEvdence = true;
+		this.isEvidence = true;
 		this.value = value;
 	}
 	

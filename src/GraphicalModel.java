@@ -17,13 +17,13 @@ public class GraphicalModel {
 	LinkedList<Factor> remainFactors;
 
 	LinkedList<Variable> orderVariables;
-	LinkedList<ArrayList<Factor>> clusters;
+	//LinkedList<ArrayList<Factor>> clusters;
 	LinkedList<Variable> evidenceVars;
 	ArrayList<Variable> nonEvidenceVars;
 	int evidenceCount = 0;
 	Factor lastFactor;
 
-	double result = 1.0;
+	double reservedResult = 1.0;
 	int emptyFactorCount = 0;
 
 	String network;
@@ -282,7 +282,6 @@ public class GraphicalModel {
 				System.exit(-1);
 			}
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
@@ -316,10 +315,8 @@ public class GraphicalModel {
 												// factor
 			}
 		} catch (NumberFormatException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
@@ -330,6 +327,8 @@ public class GraphicalModel {
 		}
 
 		evidenceCount = actualEvidence;
+		validateVariables();
+		validateFactors();
 	}
 
 	/**
@@ -338,26 +337,13 @@ public class GraphicalModel {
 	public LinkedList<Variable> computeOrder() {
 		orderVariables = new LinkedList<>();
 
-		ArrayList<Variable> varToBeAddToHeap = new ArrayList<>(variables.size()
-				- evidenceCount);
-
-		int count = 0;
-		for (Variable variable : variables) {
-			if (false == variable.isEvdence) {
-				variable.index = count++; // relabel the index of variable
-				varToBeAddToHeap.add(variable);
-			}
-		}
-
-		nonEvidenceVars = varToBeAddToHeap;
-
-		VariableHeap minHeap = new VariableHeap(varToBeAddToHeap);
+		VariableHeap minHeap = new VariableHeap(nonEvidenceVars);
 		minHeap.buildHeap();
 		// minHeap.printHeap();
 
 		while (!minHeap.isEmpty()) {
-			Variable minDegreeVar = varToBeAddToHeap.get(minHeap.deleteMin());
-			if (false == minDegreeVar.isEvdence) {
+			Variable minDegreeVar = nonEvidenceVars.get(minHeap.deleteMin());
+			if (false == minDegreeVar.isEvidence) {
 				orderVariables.add(minDegreeVar);
 			}
 
@@ -386,19 +372,20 @@ public class GraphicalModel {
 	}
 
 	public LinkedList<ArrayList<Factor>> generateClusters() {
-		remainFactors = new LinkedList<>(factors);
-		Eliminator.setFactorCount(factors.size());
 
-		clusters = new LinkedList<ArrayList<Factor>>();
+		Eliminator.setFactorCount(remainFactors.size());
+
+		LinkedList<ArrayList<Factor>> clusters = new LinkedList<ArrayList<Factor>>();
 
 		for (Variable var : orderVariables) {
 			// LinkedList<Factor> mentions = var.getFactorsMentionThis();
-			if (true == var.isEvdence) {
+			if (true == var.isEvidence) {
 				continue;
 			}
 
 			LinkedList<Factor> mentions = new LinkedList<>();
-			Iterator<Factor> remainIter = remainFactors.iterator();
+			LinkedList<Factor> copyRemainFactors = new LinkedList<>(remainFactors);
+			Iterator<Factor> remainIter = copyRemainFactors.iterator();
 
 			while (remainIter.hasNext()) {
 				Factor nextFactor = remainIter.next();
@@ -421,11 +408,14 @@ public class GraphicalModel {
 		return clusters;
 	}
 
-	public void startElimination() {
-		validateFactors();
+	public double startElimination() {
+		
+		LinkedList<ArrayList<Factor>> clusters = generateClusters();
+		
+		double result = reservedResult;
 
 		// remainFactors = new LinkedList<>(factors);
-		Eliminator.setFactorCount(factors.size());
+		Eliminator.setFactorCount(remainFactors.size());
 
 		while (!orderVariables.isEmpty()) {
 			ArrayList<Factor> cluster = clusters.poll();
@@ -492,6 +482,7 @@ public class GraphicalModel {
 		// this.evidenceVars = evidenceVarsAfterElim;
 		// prune();
 		// finalize();
+		return result;
 	}
 
 	@SuppressWarnings("unused")
@@ -505,19 +496,36 @@ public class GraphicalModel {
 		}
 	}
 
+	private void validateVariables() {
+		nonEvidenceVars = new ArrayList<>(variables.size() - evidenceCount);
+
+		int count = 0;
+		for (Variable variable : variables) {
+			if (false == variable.isEvidence) {
+				variable.index = count++; // relabel the index of variable
+				nonEvidenceVars.add(variable);
+			}
+		}
+	}
+
 	private void validateFactors() {
 		Iterator<Factor> iter = factors.iterator();
+		remainFactors = new LinkedList<>();
 
+		int index = 0;
 		while (iter.hasNext()) {
 			Factor factor = iter.next();
 			if (0 == factor.numScopes()) {
 				for (Double var : factor.table) {
 					// System.out.print(var + " ");
-					result *= var;
+					reservedResult *= var;
 				}
 				// System.out.println("");
 
 				iter.remove();
+			} else {
+				factor.index = index++;
+				remainFactors.add(factor);
 			}
 		}
 
@@ -532,7 +540,7 @@ public class GraphicalModel {
 			if (0 == factor.numScopes()) {
 				for (Double var : factor.table) {
 					System.out.print(var + " ");
-					result *= var;
+					reservedResult *= var;
 				}
 				System.out.println("");
 
@@ -554,7 +562,7 @@ public class GraphicalModel {
 		 * factor.table.get(0); }
 		 */
 		for (Double var : lastFactor.table) {
-			result *= var;
+			reservedResult *= var;
 		}
 	}
 
@@ -562,22 +570,43 @@ public class GraphicalModel {
 			ArrayList<Variable> vars, ArrayList<Integer> vals) {
 		// erase all of the evidence marker of variables
 		for (Variable var : avaiVariables) {
-			var.isEvdence = false;
+			var.isEvidence = false;
+			var.value = -1;
 		}
 
+		// align variable
 		int index = 0;
 		for (Variable var : vars) {
 			var.setSoftEvidence(vals.get(index));
 			index++;
 		}
 	}
+	
+	public double computeTempResult() {
+		double tempResult = 1.0;
+		
+		for (Factor factor : remainFactors) {
+			boolean allAssigned = true;
+			for (Variable variable : factor.variables) {
+				if(variable.isEvidence) {
+					continue;
+				}
+				allAssigned = false;
+			}
+			if(allAssigned) {
+				tempResult *= factor.getTabelValue(factor.underlyVariableToTableIndex());
+			}
+		}
+		
+		return tempResult;
+	}
 
-	public LinkedList<Variable> computeSoftOrder() {
+	public ArrayList<Integer> computeSoftOrder() {
 		// number of non-evidence variables
 		int nne = 0;
 		ArrayList<Boolean> processed = new ArrayList<>(nonEvidenceVars.size());
 		for (int i = 0; i < nonEvidenceVars.size(); i++) {
-			if (nonEvidenceVars.get(i).isEvdence) {
+			if (nonEvidenceVars.get(i).isEvidence) {
 				processed.set(i, true);
 			} else {
 				nne++;
@@ -585,22 +614,26 @@ public class GraphicalModel {
 		}
 
 		ArrayList<Integer> order = new ArrayList<Integer>(nne);
-		// clusters=vector<set<int> >(nne);
+		ArrayList<Set<Integer>> clusters = new ArrayList<Set<Integer>>(nne);
 		ArrayList<Set<Integer>> graph = new ArrayList<>(nonEvidenceVars.size());
 
 		for (Set<Integer> set : graph) {
 			set = new HashSet<Integer>();
 		}
 
-		for (int i = 0; i < factors.size(); i++) {
+		for (Set<Integer> set : clusters) {
+			set = new HashSet<Integer>();
+		}
+
+		for (int i = 0; i < remainFactors.size(); i++) {
 			// Ignore the evidence variables
-			for (int j = 0; j < factors.get(i).variables.size(); j++) {
-				int a = factors.get(i).variables.get(j).index;
-				if (variables.get(a).isEvdence)
+			for (int j = 0; j < remainFactors.get(i).variables.size(); j++) {
+				int a = remainFactors.get(i).variables.get(j).index;
+				if (nonEvidenceVars.get(a).isEvidence)
 					continue;
-				for (int k = j + 1; k < factors.get(i).variables.size(); k++) {
-					int b = factors.get(i).variables.get(k).index;
-					if (variables.get(b).isEvdence)
+				for (int k = j + 1; k < remainFactors.get(i).variables.size(); k++) {
+					int b = remainFactors.get(i).variables.get(k).index;
+					if (nonEvidenceVars.get(b).isEvidence)
 						continue;
 					graph.get(a).add(b);
 					graph.get(b).add(a);
@@ -610,13 +643,13 @@ public class GraphicalModel {
 		int max_cluster_size = 0;
 		for (int i = 0; i < nne; i++) {
 			// Find the node with the minimum number of nodes
-			int min = variables.size();
+			int min = nonEvidenceVars.size();
 			for (int j = 0; j < graph.size(); j++) {
 				if (processed.get(j))
 					continue;
 				if (min > graph.get(j).size()) {
 					// order[i]=j;
-					order.add(j);
+					order.set(i, j);
 					min = graph.get(j).size();
 				}
 			}
@@ -631,9 +664,11 @@ public class GraphicalModel {
 					graph.get(b).add(a); // issue
 				}
 			}
-			// clusters[i]=graph[var];
-			// if(clusters[i].size()>max_cluster_size)
-			// max_cluster_size=clusters[i].size();
+
+			clusters.set(i, graph.get(var));
+			if (clusters.get(i).size() > max_cluster_size) {
+				max_cluster_size = clusters.get(i).size();
+			}
 			// Remove var from the graph
 			for (int a = 0; a < graph.size(); a++) {
 				graph.get(a).remove(var);
@@ -641,21 +676,117 @@ public class GraphicalModel {
 			graph.get(var).clear();
 		}
 
-		return null;
+		return order;
 	}
+	
+	public LinkedList<ArrayList<Factor>> generateSoftClusters(ArrayList<Integer> softOrders) {
 
-	public void softBucketElimination(LinkedList<Variable> softOrder) {
+		Eliminator.setFactorCount(remainFactors.size());
 
+		LinkedList<ArrayList<Factor>> clusters = new LinkedList<ArrayList<Factor>>();
+
+		for (Integer i : softOrders) {
+			// LinkedList<Factor> mentions = var.getFactorsMentionThis();
+			Variable var = nonEvidenceVars.get(i);
+			if (true == var.isEvidence) {
+				continue;
+			}
+
+			LinkedList<Factor> mentions = new LinkedList<>();
+			// very important
+			LinkedList<Factor> copyRemainFactors = new LinkedList<>(remainFactors);
+			Iterator<Factor> remainIter = copyRemainFactors.iterator();
+
+			while (remainIter.hasNext()) {
+				Factor nextFactor = remainIter.next();
+				if (nextFactor.inScope(var)) {
+					mentions.add(nextFactor);
+					remainIter.remove();
+				}
+			}
+
+			/*
+			 * if(0 == mentions.size()) { // evidence variable
+			 * System.out.println("Empty bucket: variable index = " +
+			 * var.index); }
+			 */
+
+			ArrayList<Factor> cluster = new ArrayList<>(mentions);
+			clusters.add(cluster);
+		}
+
+		return clusters;
+	}
+	
+
+	public double softBucketElimination(ArrayList<Integer> softOrder, LinkedList<ArrayList<Factor>> clusters) {
+		double result = reservedResult;
+
+		LinkedList<Integer> orderedVariables = new LinkedList<>(softOrder);
+
+		// bucket order
+		while (!orderedVariables.isEmpty()) {
+			ArrayList<Factor> cluster = clusters.poll();
+			Variable var = nonEvidenceVars.get(orderedVariables.poll());
+
+			ArrayList<Factor> mentions = cluster;
+			if (mentions.size() == 0) {
+				continue;
+			}
+			
+			
+			Factor newFactor = Eliminator.Product(mentions);
+			newFactor = Eliminator.SumOut(newFactor, var);
+
+			if (0 == newFactor.numScopes()) {
+				result *= newFactor.getTabelValue(0);
+				emptyFactorCount++;
+				continue;
+			}
+			double Q = 1.0;
+			boolean putInNewBucket = false;
+			Iterator<Integer> carryVariableInt = orderedVariables.iterator();
+			Iterator<ArrayList<Factor>> carryCluster = clusters.iterator();
+			while (carryVariableInt.hasNext()) {
+				ArrayList<Factor> nextCluster = carryCluster.next();
+				if (newFactor.inScope(nonEvidenceVars.get(carryVariableInt.next()))) {
+					nextCluster.add(newFactor); // add new factor to next
+												// properiate bucket
+					putInNewBucket = true;
+					break;
+				}
+			}
+
+			if (false == putInNewBucket) {
+				System.out.println(newFactor.table);
+			}
+
+			lastFactor = newFactor;
+			if (null == lastFactor) {
+				System.out.println();
+			}
+		}
+
+		// this.evidenceVars = evidenceVarsAfterElim;
+		// prune();
+		// finalize();
+		return result;
 	}
 
 	public static void usage() {
 		System.out.println("java  GraphicalModel " + "FILENAME");
+	}
+	
+	public static void runSoftElimination(String[] args) {
+		// TODO Auto-generated method stub
+
 	}
 
 	public static void main(String[] args) {
 		if (1 != args.length) {
 			usage();
 		}
+		
 
 		String fileName = args[0];
 
@@ -677,17 +808,15 @@ public class GraphicalModel {
 			}
 			writer.println("");
 
-			model.generateClusters();
-			model.startElimination();
+			double result = model.startElimination();
 			writer.println("Elimination completed");
 			writer.println("");
 			writer.println("====================RESULT========================");
 			if (model.network.equals("MARKOV")) {
-				for (double z : model.lastFactor.table)
-					writer.println("Z = " + z);
+				writer.println("Z = " + result);
 			} else {
 
-				writer.println("The probability of evidence = " + model.result);
+				writer.println("The probability of evidence = " + result);
 				writer.println("");
 				System.out.println("Empty Factor Count = "
 						+ model.emptyFactorCount);

@@ -155,6 +155,18 @@ public class Factor {
 
 		return index;
 	}
+	
+	public int underlyVariableToTableIndex() {
+		int[] values = new int[variables.size()];
+		for (int i = 0; i < variables.size(); i++) {
+			if(!variables.get(i).isEvidence) {
+				return -1;
+			}
+			values[i] = variables.get(i).value;
+		}
+		
+		return variableValueToTableIndex(values);
+	}
 
 	public void instantiateVariable(Variable var, int value) {
 
