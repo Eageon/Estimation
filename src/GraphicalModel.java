@@ -9,6 +9,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Set;
 
+import com.sun.xml.internal.bind.v2.util.FatalAdapter;
+
 public class GraphicalModel {
 	int numVariables;
 	ArrayList<Factor> factors;
@@ -17,7 +19,7 @@ public class GraphicalModel {
 	LinkedList<Factor> remainFactors;
 
 	LinkedList<Variable> orderVariables;
-	//LinkedList<ArrayList<Factor>> clusters;
+	// LinkedList<ArrayList<Factor>> clusters;
 	LinkedList<Variable> evidenceVars;
 	ArrayList<Variable> nonEvidenceVars;
 	int evidenceCount = 0;
@@ -311,8 +313,8 @@ public class GraphicalModel {
 				int value = Integer.valueOf(args[1]);
 
 				Variable variable = variables.get(indexVariable);
-				variable.setEvidence(value); // setEvidence will intantiate
-												// factor
+				variable.setSoftEvidence(value); // setEvidence will intantiate
+													// factor
 			}
 		} catch (NumberFormatException e) {
 			e.printStackTrace();
@@ -327,7 +329,8 @@ public class GraphicalModel {
 		}
 
 		evidenceCount = actualEvidence;
-		validateVariables();
+		nonEvidenceVars = variables;
+		// validateVariables();
 		validateFactors();
 	}
 
@@ -384,7 +387,8 @@ public class GraphicalModel {
 			}
 
 			LinkedList<Factor> mentions = new LinkedList<>();
-			LinkedList<Factor> copyRemainFactors = new LinkedList<>(remainFactors);
+			LinkedList<Factor> copyRemainFactors = new LinkedList<>(
+					remainFactors);
 			Iterator<Factor> remainIter = copyRemainFactors.iterator();
 
 			while (remainIter.hasNext()) {
@@ -409,9 +413,9 @@ public class GraphicalModel {
 	}
 
 	public double startElimination() {
-		
+
 		LinkedList<ArrayList<Factor>> clusters = generateClusters();
-		
+
 		double result = reservedResult;
 
 		// remainFactors = new LinkedList<>(factors);
@@ -497,6 +501,8 @@ public class GraphicalModel {
 	}
 
 	private void validateVariables() {
+
+		// soft elimination you don't have to exec this function
 		nonEvidenceVars = new ArrayList<>(variables.size() - evidenceCount);
 
 		int count = 0;
@@ -567,11 +573,13 @@ public class GraphicalModel {
 	}
 
 	public void setSoftEvidence(LinkedList<Variable> avaiVariables,
-			ArrayList<Variable> vars, ArrayList<Integer> vals) {
+			ArrayList<Variable> vars, ArrayList<Integer> vals, boolean clear) {
 		// erase all of the evidence marker of variables
-		for (Variable var : avaiVariables) {
-			var.isEvidence = false;
-			var.value = -1;
+		if (clear) {
+			for (Variable var : avaiVariables) {
+				var.isEvidence = false;
+				var.value = -1;
+			}
 		}
 
 		// align variable
@@ -581,23 +589,24 @@ public class GraphicalModel {
 			index++;
 		}
 	}
-	
+
 	public double computeTempResult() {
 		double tempResult = 1.0;
-		
+
 		for (Factor factor : remainFactors) {
 			boolean allAssigned = true;
 			for (Variable variable : factor.variables) {
-				if(variable.isEvidence) {
+				if (variable.isEvidence) {
 					continue;
 				}
 				allAssigned = false;
 			}
-			if(allAssigned) {
-				tempResult *= factor.getTabelValue(factor.underlyVariableToTableIndex());
+			if (allAssigned) {
+				tempResult *= factor.getTabelValue(factor
+						.underlyVariableToTableIndex());
 			}
 		}
-		
+
 		return tempResult;
 	}
 
@@ -605,6 +614,10 @@ public class GraphicalModel {
 		// number of non-evidence variables
 		int nne = 0;
 		ArrayList<Boolean> processed = new ArrayList<>(nonEvidenceVars.size());
+		for (int i = 0; i < nonEvidenceVars.size(); i++) {
+			processed.add(new Boolean(false));
+		}
+
 		for (int i = 0; i < nonEvidenceVars.size(); i++) {
 			if (nonEvidenceVars.get(i).isEvidence) {
 				processed.set(i, true);
@@ -614,32 +627,41 @@ public class GraphicalModel {
 		}
 
 		ArrayList<Integer> order = new ArrayList<Integer>(nne);
-		ArrayList<Set<Integer>> clusters = new ArrayList<Set<Integer>>(nne);
+		// ArrayList<Set<Integer>> clusters = new ArrayList<Set<Integer>>(nne);
 		ArrayList<Set<Integer>> graph = new ArrayList<>(nonEvidenceVars.size());
 
-		for (Set<Integer> set : graph) {
-			set = new HashSet<Integer>();
+		for (int i = 0; i < nonEvidenceVars.size(); i++) {
+			graph.add(new HashSet<Integer>());
 		}
 
-		for (Set<Integer> set : clusters) {
-			set = new HashSet<Integer>();
-		}
-
+		int nonEvidenceCount = 0;
 		for (int i = 0; i < remainFactors.size(); i++) {
 			// Ignore the evidence variables
 			for (int j = 0; j < remainFactors.get(i).variables.size(); j++) {
 				int a = remainFactors.get(i).variables.get(j).index;
-				if (nonEvidenceVars.get(a).isEvidence)
+				if (nonEvidenceVars.get(a).isEvidence) {
 					continue;
+				}
 				for (int k = j + 1; k < remainFactors.get(i).variables.size(); k++) {
 					int b = remainFactors.get(i).variables.get(k).index;
-					if (nonEvidenceVars.get(b).isEvidence)
+					if (nonEvidenceVars.get(b).isEvidence) {
 						continue;
+					}
 					graph.get(a).add(b);
 					graph.get(b).add(a);
 				}
 			}
 		}
+
+		for (int i = 0; i < nne; i++) {
+			order.add(-1);
+		}
+
+		/*
+		 * for (int i = 0; i < nne; i++) { clusters.add(new HashSet<Integer>());
+		 * }
+		 */
+
 		int max_cluster_size = 0;
 		for (int i = 0; i < nne; i++) {
 			// Find the node with the minimum number of nodes
@@ -656,8 +678,8 @@ public class GraphicalModel {
 			// Connect the neighbors of order[i] to each other
 			int var = order.get(i);
 			processed.set(var, true);
-			for (int a = 0; a < graph.size(); a++) {
-				for (int b = 0; b < graph.size(); b++) {
+			for (int a = 0; a < graph.get(var).size(); a++) {
+				for (int b = 0; b < graph.get(var).size(); b++) {
 					if (a == b)
 						continue;
 					graph.get(a).add(b);
@@ -665,12 +687,12 @@ public class GraphicalModel {
 				}
 			}
 
-			clusters.set(i, graph.get(var));
-			if (clusters.get(i).size() > max_cluster_size) {
-				max_cluster_size = clusters.get(i).size();
-			}
+			/*
+			 * clusters.set(i, graph.get(var)); if (clusters.get(i).size() >
+			 * max_cluster_size) { max_cluster_size = clusters.get(i).size(); }
+			 */
 			// Remove var from the graph
-			for (int a = 0; a < graph.size(); a++) {
+			for (int a = 0; a < graph.get(var).size(); a++) {
 				graph.get(a).remove(var);
 			}
 			graph.get(var).clear();
@@ -678,8 +700,9 @@ public class GraphicalModel {
 
 		return order;
 	}
-	
-	public LinkedList<ArrayList<Factor>> generateSoftClusters(ArrayList<Integer> softOrders) {
+
+	public LinkedList<ArrayList<Factor>> generateSoftClusters(
+			ArrayList<Integer> softOrders) {
 
 		Eliminator.setFactorCount(remainFactors.size());
 
@@ -694,11 +717,15 @@ public class GraphicalModel {
 
 			LinkedList<Factor> mentions = new LinkedList<>();
 			// very important
-			LinkedList<Factor> copyRemainFactors = new LinkedList<>(remainFactors);
+			LinkedList<Factor> copyRemainFactors = new LinkedList<>(
+					remainFactors);
 			Iterator<Factor> remainIter = copyRemainFactors.iterator();
 
 			while (remainIter.hasNext()) {
 				Factor nextFactor = remainIter.next();
+				if (nextFactor.table == null) {
+					System.out.println("This is it");
+				}
 				if (nextFactor.inScope(var)) {
 					mentions.add(nextFactor);
 					remainIter.remove();
@@ -717,10 +744,26 @@ public class GraphicalModel {
 
 		return clusters;
 	}
-	
 
-	public double softBucketElimination(ArrayList<Integer> softOrder, LinkedList<ArrayList<Factor>> clusters) {
-		double result = reservedResult;
+	// private double baseResult = 1.0;
+
+	private double initBaseResult() {
+		double baseResult = reservedResult;
+
+		for (Factor factor : factors) {
+			if (factor.isAllAssigned()) {
+				baseResult *= factor.getTabelValue(factor
+						.underlyVariableToTableIndex());
+			}
+		}
+
+		return baseResult;
+	}
+
+	public double softBucketElimination(ArrayList<Integer> softOrder,
+			LinkedList<ArrayList<Factor>> clusters) {
+
+		double result = initBaseResult();
 
 		LinkedList<Integer> orderedVariables = new LinkedList<>(softOrder);
 
@@ -729,12 +772,28 @@ public class GraphicalModel {
 			ArrayList<Factor> cluster = clusters.poll();
 			Variable var = nonEvidenceVars.get(orderedVariables.poll());
 
-			ArrayList<Factor> mentions = cluster;
+			int naaf = 0;
+			for (Factor factor : cluster) {
+				if (!factor.isAllAssigned()) {
+					naaf++;
+				}
+			}
+
+			ArrayList<Factor> mentions = new ArrayList<>(naaf);
+			for (Factor factor : cluster) {
+				if (factor.table == null) {
+					System.out.println("Ohhhhh");
+				}
+
+				if (!factor.isAllAssigned()) {
+					mentions.add(factor);
+				}
+			}
+
 			if (mentions.size() == 0) {
 				continue;
 			}
-			
-			
+
 			Factor newFactor = Eliminator.Product(mentions);
 			newFactor = Eliminator.SumOut(newFactor, var);
 
@@ -749,7 +808,8 @@ public class GraphicalModel {
 			Iterator<ArrayList<Factor>> carryCluster = clusters.iterator();
 			while (carryVariableInt.hasNext()) {
 				ArrayList<Factor> nextCluster = carryCluster.next();
-				if (newFactor.inScope(nonEvidenceVars.get(carryVariableInt.next()))) {
+				if (newFactor.inScope(nonEvidenceVars.get(carryVariableInt
+						.next()))) {
 					nextCluster.add(newFactor); // add new factor to next
 												// properiate bucket
 					putInNewBucket = true;
@@ -776,7 +836,7 @@ public class GraphicalModel {
 	public static void usage() {
 		System.out.println("java  GraphicalModel " + "FILENAME");
 	}
-	
+
 	public static void runSoftElimination(String[] args) {
 		// TODO Auto-generated method stub
 
@@ -785,8 +845,8 @@ public class GraphicalModel {
 	public static void main(String[] args) {
 		if (1 != args.length) {
 			usage();
+			System.exit(0);
 		}
-		
 
 		String fileName = args[0];
 
@@ -800,15 +860,17 @@ public class GraphicalModel {
 			model.readEvidence(fileName + ".evid");
 			writer.println("Evidence loaded, and variables instantiation completed. "
 					+ model.evidenceCount + " evidence");
-			model.computeOrder();
+			ArrayList<Integer> order = model.computeSoftOrder();
+			LinkedList<ArrayList<Factor>> clusters = model
+					.generateSoftClusters(order);
 			writer.println("Ordering computed");
 			writer.println("Order:");
-			for (Variable var : model.orderVariables) {
-				writer.print(var.index + ", ");
+			for (Integer var : order) {
+				writer.print(var + ", ");
 			}
 			writer.println("");
 
-			double result = model.startElimination();
+			double result = model.softBucketElimination(order, clusters);
 			writer.println("Elimination completed");
 			writer.println("");
 			writer.println("====================RESULT========================");

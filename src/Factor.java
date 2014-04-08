@@ -31,6 +31,9 @@ public class Factor {
 
 		int numCells = 1;
 		for (Variable var : variables) {
+			if (var.isEvidence) {
+				continue;
+			}
 			numCells *= var.domainSize();
 		}
 
@@ -47,8 +50,9 @@ public class Factor {
 	}
 
 	public void initTable(int num) {
-		if (0 > num)
+		if (0 > num) {
 			return;
+		}
 
 		table = new ArrayList<>(num);
 
@@ -83,6 +87,15 @@ public class Factor {
 	// par.addNeighbor(var.index);
 	// }
 	// }
+	
+	public boolean isAllAssigned() {
+		for (Variable var : variables) {
+			if(!var.isEvidence) {
+				return false;
+			}
+		}
+		return true;
+	}
 
 	public double getTabelValue(int index) {
 		if (0 > index)
@@ -210,7 +223,7 @@ public class Factor {
 //			this.printFactor();
 //		}
 
-		table.clear();
+		//table.clear();
 		table = newTable;
 		variables.remove(index);
 

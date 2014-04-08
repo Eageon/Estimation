@@ -84,6 +84,9 @@ public class Eliminator {
 		@SuppressWarnings("unused")
 		int numTables = 1;
 		for(Variable var : set) {
+			if(var.isEvidence) {
+				continue;
+			}
 			Z.add(var);
 			numTables *= var.domainSize();
 		}
@@ -147,11 +150,12 @@ public class Eliminator {
 		
 		for(int i = 0; i < factor.variables.size(); i++) {
 			Variable y = factor.variables.get(i);
-			numTmp /= y.domainSize();
 			
 			if(y.isEvidence) {
 				continue;
 			}
+			
+			numTmp /= y.domainSize();
 			
 			if(y != var) {
 				varsAfterElim.add(y);
@@ -195,7 +199,7 @@ public class Eliminator {
 //			}
 		}
 		
-		fRet.index = factorCount;
+		//fRet.index = factorCount;
 		factorCount++;
 		return fRet;
 	}

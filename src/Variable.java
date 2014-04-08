@@ -9,7 +9,7 @@ public class Variable implements Comparable<Variable> {
 	int index = -1;
 	
 	LinkedList<Variable> neighbors = new LinkedList<>();
-	LinkedList<Variable> neighborsBackup;
+	LinkedList<Variable> neighborsBackup = new LinkedList<>();
 	LinkedList<Factor> factorMentionThis = new LinkedList<>();
 	
 	public Variable(int domainSize) {
