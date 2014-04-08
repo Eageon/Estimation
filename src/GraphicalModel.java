@@ -131,6 +131,7 @@ public class GraphicalModel {
 			int domainSize = Integer.valueOf(s);
 			Variable v = new Variable(domainSize);
 			v.index = indexVar++;
+			v.prevIndex = v.index;
 			variables.add(v);
 		}
 
@@ -647,10 +648,18 @@ public class GraphicalModel {
 					if (nonEvidenceVars.get(b).isEvidence) {
 						continue;
 					}
+					if(a == b) {
+						continue;
+					}
 					graph.get(a).add(b);
 					graph.get(b).add(a);
 				}
 			}
+		}
+		
+		int tmp = 0;
+		for (Set<Integer> set : graph) {
+			System.out.println((tmp++) + ": " + set.size());
 		}
 
 		for (int i = 0; i < nne; i++) {
@@ -675,11 +684,12 @@ public class GraphicalModel {
 					min = graph.get(j).size();
 				}
 			}
+			System.out.println(i + ": " + order.get(i) + " " + nonEvidenceVars.get(order.get(i)).index + " " + graph.get(i).size());
 			// Connect the neighbors of order[i] to each other
 			int var = order.get(i);
 			processed.set(var, true);
-			for (int a = 0; a < graph.get(var).size(); a++) {
-				for (int b = 0; b < graph.get(var).size(); b++) {
+			for (Integer a : graph.get(var)) {
+				for (Integer b : graph.get(var)) {
 					if (a == b)
 						continue;
 					graph.get(a).add(b);
@@ -692,7 +702,7 @@ public class GraphicalModel {
 			 * max_cluster_size) { max_cluster_size = clusters.get(i).size(); }
 			 */
 			// Remove var from the graph
-			for (int a = 0; a < graph.get(var).size(); a++) {
+			for (Integer a : graph.get(var)) {
 				graph.get(a).remove(var);
 			}
 			graph.get(var).clear();

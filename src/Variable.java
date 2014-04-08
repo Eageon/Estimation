@@ -5,6 +5,7 @@ public class Variable implements Comparable<Variable> {
 	int d;
 	boolean isEvidence = false;
 	int value;
+	int prevIndex = -1;
 	
 	int index = -1;
 	
