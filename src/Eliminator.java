@@ -104,17 +104,30 @@ public class Eliminator {
 			int[] zValueIndex = fRet.tableIndexToVaraibleValue(z);
 			
 			for(Factor xFactor : factorPrime) {
-			//for (int i = 0; i < factorPrime.size(); i++) {
-				//Factor xFactor = factorPrime.get(i);
 				int[] primeValues = new int[xFactor.numScopes()];
-				// find the same variable
+				
+				int count = 0;
+				// set evidence first
+				for (int i = 0; i < xFactor.variables.size(); i++) {
+					if(xFactor.variables.get(i).isEvidence) {
+						primeValues[i] = xFactor.variables.get(i).value;
+						count++;
+					}
+				}
+				
+				// find the same variable between Z and xFactor
 				for (int j = 0; j < primeValues.length; j++) {
 					for (int m = 0; m < zValueIndex.length; m++) {
 						if(fRet.variables.get(m) == xFactor.variables.get(j)) {
 							primeValues[j] = zValueIndex[m];
+							count++;
 							break; // need to improve
 						}
 					}
+				}
+				
+				if (count != xFactor.numScopes()) {
+					System.out.println("count = " + count + " actual = " + xFactor.numScopes());
 				}
 				
 				int xTableIndex = xFactor.variableValueToTableIndex(primeValues);
@@ -186,9 +199,6 @@ public class Eliminator {
 				base += num;
 				count = 0;
 			}
-//			else {
-//				base++;
-//			}
 		}
 		
 		//fRet.index = factorCount;
