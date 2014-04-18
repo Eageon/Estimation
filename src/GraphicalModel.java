@@ -312,7 +312,75 @@ public class GraphicalModel {
 				int value = Integer.valueOf(args[1]);
 
 				Variable variable = variables.get(indexVariable);
-				variable.setSoftEvidence(value); // setEvidence will intantiate										// factor
+				variable.setEvidence(value); // setEvidence will intantiate //
+												// factor
+			}
+		} catch (NumberFormatException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		if (actualEvidence != numEvidence) {
+			System.out
+					.println("Format error: actual evidence less than indication");
+			System.exit(-1);
+		}
+
+		evidenceCount = actualEvidence;
+		nonEvidenceVars = variables;
+		validateVariables();
+		validateFactors();
+	}
+
+	public void readSoftEvidence(String fileName) {
+		BufferedReader reader = null;
+		try {
+			reader = new BufferedReader(new FileReader(fileName));
+		} catch (FileNotFoundException e) {
+			System.out.println("Can NOT find file " + fileName);
+			System.exit(-1);
+		}
+
+		String numEvidenceLine = null;
+		try {
+			if (null == (numEvidenceLine = reader.readLine())) {
+				System.out
+						.println("Format error: Can NOT read number of evidence");
+				System.exit(-1);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		numEvidenceLine = numEvidenceLine.trim();
+		int numEvidence = Integer.valueOf(numEvidenceLine);
+
+		String line = null;
+		int actualEvidence = 0;
+		try {
+			while (null != (line = reader.readLine())) {
+				if (line.equals("")) {
+					continue; // escape the newline
+				}
+
+				actualEvidence++;
+
+				line = line.trim();
+				// line = line.replaceAll("\\s+", " ");
+				String[] args = line.split("\\s+|\t");
+				if (2 != args.length) {
+					System.out
+							.println("Format error: Evidence line must contain exact two argument");
+					System.exit(-1);
+				}
+
+				int indexVariable = Integer.valueOf(args[0]);
+				int value = Integer.valueOf(args[1]);
+
+				Variable variable = variables.get(indexVariable);
+				variable.setSoftEvidence(value); // setEvidence will intantiate
+													// // factor
 			}
 		} catch (NumberFormatException e) {
 			e.printStackTrace();
@@ -646,7 +714,7 @@ public class GraphicalModel {
 					if (nonEvidenceVars.get(b).isEvidence) {
 						continue;
 					}
-					if(a == b) {
+					if (a == b) {
 						continue;
 					}
 					graph.get(a).add(b);
@@ -654,7 +722,7 @@ public class GraphicalModel {
 				}
 			}
 		}
-		
+
 		int tmp = 0;
 		for (Set<Integer> set : graph) {
 			System.out.println((tmp++) + ": " + set.size());
@@ -681,7 +749,9 @@ public class GraphicalModel {
 					min = graph.get(j).size();
 				}
 			}
-			//System.out.println(i + ": " + order.get(i) + " " + nonEvidenceVars.get(order.get(i)).index + " " + graph.get(i).size());
+			// System.out.println(i + ": " + order.get(i) + " " +
+			// nonEvidenceVars.get(order.get(i)).index + " " +
+			// graph.get(i).size());
 			// Connect the neighbors of order[i] to each other
 			int var = order.get(i);
 			processed.set(var, true);
@@ -712,10 +782,10 @@ public class GraphicalModel {
 			ArrayList<Integer> softOrders) {
 
 		Eliminator.setFactorCount(remainFactors.size());
-		LinkedList<Factor> copyRemainFactors = new LinkedList<>(
-				remainFactors);
+		LinkedList<Factor> copyRemainFactors = new LinkedList<>(remainFactors);
 
-		ArrayList<ArrayList<Factor>> clusters = new ArrayList<ArrayList<Factor>>(softOrders.size());
+		ArrayList<ArrayList<Factor>> clusters = new ArrayList<ArrayList<Factor>>(
+				softOrders.size());
 
 		for (Integer i : softOrders) {
 			// LinkedList<Factor> mentions = var.getFactorsMentionThis();
@@ -726,25 +796,23 @@ public class GraphicalModel {
 
 			LinkedList<Factor> mentions = new LinkedList<>();
 			// very important
-			
+
 			Iterator<Factor> remainIter = copyRemainFactors.iterator();
 
 			while (remainIter.hasNext()) {
 				Factor nextFactor = remainIter.next();
-				if (nextFactor.table == null) {
-					System.out.println("This is it");
+				if (nextFactor.isAllAssigned()) {
+					reservedResult *= nextFactor.getTabelValue(nextFactor
+							.underlyVariableToTableIndex());
+					remainIter.remove();
+					continue;
 				}
+				
 				if (nextFactor.inScope(var)) {
 					mentions.add(nextFactor);
 					remainIter.remove();
 				}
 			}
-
-			/*
-			 * if(0 == mentions.size()) { // evidence variable
-			 * System.out.println("Empty bucket: variable index = " +
-			 * var.index); }
-			 */
 
 			ArrayList<Factor> cluster = new ArrayList<>(mentions);
 			clusters.add(cluster);
@@ -757,7 +825,7 @@ public class GraphicalModel {
 
 	private double initBaseResult() {
 		double baseResult = reservedResult;
-		
+
 		for (Factor factor : factors) {
 			if (factor.isAllAssigned()) {
 				baseResult *= factor.getTabelValue(factor
@@ -770,15 +838,16 @@ public class GraphicalModel {
 
 	public double softBucketElimination(ArrayList<Integer> softOrder,
 			ArrayList<ArrayList<Factor>> arrClusters) {
-		
+
 		validateFactors();
-		
+
 		for (ArrayList<Factor> arrayList : arrClusters) {
 			System.out.println(arrayList);
 		}
 		System.out.println("Base Result = " + reservedResult);
 
-		double result = initBaseResult();
+		//double result = initBaseResult();
+		double result = reservedResult;
 		System.out.println("Result = " + result);
 		LinkedList<ArrayList<Factor>> clusters = new LinkedList<>(arrClusters);
 
@@ -795,8 +864,8 @@ public class GraphicalModel {
 				if (!factor.isAllAssigned()) {
 					naaf++;
 				}
-				
-				if(!factor.inScope(var)) {
+
+				if (!factor.inScope(var)) {
 					System.out.println("Really strange");
 				}
 			}
@@ -809,6 +878,8 @@ public class GraphicalModel {
 
 				if (!factor.isAllAssigned()) {
 					mentions.add(factor);
+				} else {
+					System.out.println("Little fish");
 				}
 			}
 
@@ -818,27 +889,30 @@ public class GraphicalModel {
 
 			Factor newFactor = Eliminator.Product(mentions);
 			newFactor = Eliminator.SumOut(newFactor, var);
-			
+
 			if (newFactor.numScopes() > prev) {
-				System.out.println("prev = " + prev + " now = " + newFactor.numScopes());
+				System.out.println("prev = " + prev + " now = "
+						+ newFactor.numScopes());
 			}
-			
-			if(newFactor.inScope(var)) {
+
+			if (newFactor.inScope(var)) {
 				System.out.println("Really strange");
 			}
 
 			if ((0 == newFactor.numScopes())) {
 				result *= newFactor.getTabelValue(0);
 				emptyFactorCount++;
+				System.out.println("Only factor value = " + newFactor.getTabelValue(0));
 				continue;
 			}
-			
-			if(newFactor.isAllAssigned()) {
-				result *= newFactor.getTabelValue(newFactor.underlyVariableToTableIndex());
+
+			if (newFactor.isAllAssigned()) {
+				result *= newFactor.getTabelValue(newFactor
+						.underlyVariableToTableIndex());
 				System.out.println(result);
 				continue;
 			}
-			
+
 			boolean putInNewBucket = false;
 			Iterator<Integer> carryVariableInt = orderedVariables.iterator();
 			Iterator<ArrayList<Factor>> carryCluster = clusters.iterator();
@@ -893,7 +967,7 @@ public class GraphicalModel {
 					+ model.variables.size() + " variables, "
 					+ model.factors.size() + " factors");
 			writer.println(model.network + " network");
-			model.readEvidence(fileName + ".evid");
+			model.readSoftEvidence(fileName + ".evid");
 			writer.println("Evidence loaded, and variables instantiation completed. "
 					+ model.evidenceCount + " evidence");
 			ArrayList<Integer> order = model.computeSoftOrder();
