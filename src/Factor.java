@@ -170,9 +170,6 @@ public class Factor {
 	}
 	
 	public int variableAndValueToTableIndex(ArrayList<Variable> vars, int[] values) {
-		int multi = 1;
-		int index = 0;
-		
 		int[] realyValues = new int[values.length];
 		int count = 0;
 		
@@ -226,18 +223,12 @@ public class Factor {
 		ArrayList<Double> newTable = new ArrayList<>(table.size()
 				/ variables.get(index).domainSize());
 
-		@SuppressWarnings("unused")
-		boolean doPrint = false;
-		@SuppressWarnings("unused")
-		int j = 0;
 		for (int i = 0; i < table.size(); i++) {
 			int[] valuesArray = tableIndexToVaraibleValue(i);
 			if (valuesArray[index] == value) {
 				if (0.0 == table.get(i)) {
-					doPrint = true;
 				}
 				newTable.add(table.get(i));
-				j++;
 			}
 		}
 

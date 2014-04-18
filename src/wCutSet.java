@@ -43,7 +43,6 @@ public class wCutSet {
 			for (Variable var : model.nonEvidenceVars) {
 				int currCount = 0;
 				for (LinkedList<Variable> cluster : variableClusters) {
-					boolean hasThisVar = false;
 					if (true == cluster.contains(var)) {
 						currCount++;
 						break;

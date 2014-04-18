@@ -9,8 +9,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Set;
 
-import com.sun.xml.internal.bind.v2.util.FatalAdapter;
-
 public class GraphicalModel {
 	int numVariables;
 	ArrayList<Factor> factors;
@@ -500,6 +498,7 @@ public class GraphicalModel {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	private void validateVariables() {
 
 		// soft elimination you don't have to exec this function
@@ -538,6 +537,7 @@ public class GraphicalModel {
 		// System.out.println("End of validation");
 	}
 
+	@SuppressWarnings("unused")
 	private void validateRemainFactors() {
 		Iterator<Factor> iter = remainFactors.iterator();
 
@@ -634,7 +634,6 @@ public class GraphicalModel {
 			graph.add(new HashSet<Integer>());
 		}
 
-		int nonEvidenceCount = 0;
 		for (int i = 0; i < remainFactors.size(); i++) {
 			// Ignore the evidence variables
 			for (int j = 0; j < remainFactors.get(i).variables.size(); j++) {
@@ -670,7 +669,6 @@ public class GraphicalModel {
 		 * }
 		 */
 
-		int max_cluster_size = 0;
 		for (int i = 0; i < nne; i++) {
 			// Find the node with the minimum number of nodes
 			int min = nonEvidenceVars.size();
@@ -841,7 +839,6 @@ public class GraphicalModel {
 				continue;
 			}
 			
-			double Q = 1.0;
 			boolean putInNewBucket = false;
 			Iterator<Integer> carryVariableInt = orderedVariables.iterator();
 			Iterator<ArrayList<Factor>> carryCluster = clusters.iterator();

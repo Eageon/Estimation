@@ -1,7 +1,6 @@
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.LinkedList;
 
 public class ImportanceSampling {
 
@@ -12,8 +11,6 @@ public class ImportanceSampling {
 		Q.generateSamples();
 
 		double Z = 0.0;
-		double adaptor = 0.0;
-
 		ArrayList<Integer> softOrder = model.computeSoftOrder();
 		ArrayList<ArrayList<Factor>> clusters = model
 				.generateSoftClusters(softOrder);
@@ -30,6 +27,7 @@ public class ImportanceSampling {
 		int tmp = 1;
 		for (int i = 1; i < N; i++) {
 			double z = i * (1.0 / N);
+			@SuppressWarnings("unused")
 			ArrayList<Variable> softEvidence = Q.sample(z);
 
 			double numerator = model.softBucketElimination(softOrder, clusters);
