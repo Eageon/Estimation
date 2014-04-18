@@ -1,0 +1,15 @@
+c Debugging is ON.
+Reading Markov network
+Max cluster size =12
+Estimate  = 2.15541e+06
+num evidence = 0
+Limit = 1e+07
+#sampled variables = 0 out of 67
+num values = 1
+t 0.003999
+z 16.4536
+---------------------------RESULT------------------------------
+	 Log Base e probability of evidence = 37.8857
+	 Log Base 10 probability of evidence = 16.4536
+	 Probability of evidence = 2.84166e+16
+---------------------------RESULT------------------------------

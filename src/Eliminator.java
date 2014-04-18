@@ -138,6 +138,65 @@ public class Eliminator {
 		return fRet;
 	}
 	
+	public static Factor SumOut(Factor factor, ArrayList<Variable> vars) {
+		int numTmp = factor.table.size();
+		int num = 0;
+		Variable var = new Variable(3);  // fake
+		
+		ArrayList<Variable> varsAfterElim = new ArrayList<>(factor.numScopes());
+		
+		for(int i = 0; i < factor.variables.size(); i++) {
+			Variable y = factor.variables.get(i);
+			
+			if(y.isEvidence) {
+				continue;
+			}
+			
+			numTmp /= y.domainSize();
+			
+			if(!vars.contains(y)) {
+				varsAfterElim.add(y);
+			} else {
+				num = numTmp;
+			}
+		}
+		
+		Factor fRet = new Factor(varsAfterElim);
+		fRet.initTable();
+		//fRet.tableZeros();
+			
+		int i = 0;
+		int count = 0;
+		for(int base = 0; base < factor.table.size() 
+				&& (base + num * (var.domainSize() - 1)) < factor.table.size()
+					;) {
+			
+			double value = 0.0;
+			// for each instantiation of vars
+			for(int k = 0; k < var.domainSize(); k++) {
+				value += factor.getTabelValue(base + k * num);
+			}
+			
+			fRet.setTableValue(i, value);
+			
+			i++;
+			count++;
+			base++;
+			if(count == (num)) {
+				base += num;
+				count = 0;
+			}
+//			else {
+//				base++;
+//			}
+		}
+		
+		//fRet.index = factorCount;
+		System.gc();
+		factorCount++;
+		return fRet;
+	}
+	
 	/*
 	 * Eliminate var in factor
 	 */

@@ -1,0 +1,46 @@
+c Debugging is ON.
+Reading Markov network
+Max cluster size =28
+Estimate  = 6.21453e+08
+num evidence = 0
+Limit = 1e+07
+#sampled variables = 5 out of 324
+num values = 32
+t 0.045993
+z 338.957
+z 340.154
+z 340.559
+z 340.56
+z 340.56
+z 340.567
+z 340.568
+z 340.568
+z 340.597
+z 340.76
+z 341.187
+z 341.19
+z 341.19
+z 341.191
+z 341.191
+z 341.191
+z 341.193
+z 341.193
+z 341.193
+z 341.193
+z 341.228
+z 341.231
+z 341.231
+z 341.284
+z 341.284
+z 341.284
+z 341.284
+z 341.284
+z 341.323
+z 341.328
+z 341.33
+z 341.492
+---------------------------RESULT------------------------------
+	 Log Base e probability of evidence = 786.314
+	 Log Base 10 probability of evidence = 341.492
+	 Probability of evidence = 3.10403e+341
+---------------------------RESULT------------------------------

@@ -314,8 +314,7 @@ public class GraphicalModel {
 				int value = Integer.valueOf(args[1]);
 
 				Variable variable = variables.get(indexVariable);
-				variable.setSoftEvidence(value); // setEvidence will intantiate
-													// factor
+				variable.setSoftEvidence(value); // setEvidence will intantiate										// factor
 			}
 		} catch (NumberFormatException e) {
 			e.printStackTrace();
@@ -684,7 +683,7 @@ public class GraphicalModel {
 					min = graph.get(j).size();
 				}
 			}
-			System.out.println(i + ": " + order.get(i) + " " + nonEvidenceVars.get(order.get(i)).index + " " + graph.get(i).size());
+			//System.out.println(i + ": " + order.get(i) + " " + nonEvidenceVars.get(order.get(i)).index + " " + graph.get(i).size());
 			// Connect the neighbors of order[i] to each other
 			int var = order.get(i);
 			processed.set(var, true);
@@ -711,12 +710,14 @@ public class GraphicalModel {
 		return order;
 	}
 
-	public LinkedList<ArrayList<Factor>> generateSoftClusters(
+	public ArrayList<ArrayList<Factor>> generateSoftClusters(
 			ArrayList<Integer> softOrders) {
 
 		Eliminator.setFactorCount(remainFactors.size());
+		LinkedList<Factor> copyRemainFactors = new LinkedList<>(
+				remainFactors);
 
-		LinkedList<ArrayList<Factor>> clusters = new LinkedList<ArrayList<Factor>>();
+		ArrayList<ArrayList<Factor>> clusters = new ArrayList<ArrayList<Factor>>(softOrders.size());
 
 		for (Integer i : softOrders) {
 			// LinkedList<Factor> mentions = var.getFactorsMentionThis();
@@ -727,8 +728,7 @@ public class GraphicalModel {
 
 			LinkedList<Factor> mentions = new LinkedList<>();
 			// very important
-			LinkedList<Factor> copyRemainFactors = new LinkedList<>(
-					remainFactors);
+			
 			Iterator<Factor> remainIter = copyRemainFactors.iterator();
 
 			while (remainIter.hasNext()) {
@@ -759,7 +759,7 @@ public class GraphicalModel {
 
 	private double initBaseResult() {
 		double baseResult = reservedResult;
-
+		
 		for (Factor factor : factors) {
 			if (factor.isAllAssigned()) {
 				baseResult *= factor.getTabelValue(factor
@@ -771,13 +771,23 @@ public class GraphicalModel {
 	}
 
 	public double softBucketElimination(ArrayList<Integer> softOrder,
-			LinkedList<ArrayList<Factor>> clusters) {
+			ArrayList<ArrayList<Factor>> arrClusters) {
+		
+		validateFactors();
+		
+		for (ArrayList<Factor> arrayList : arrClusters) {
+			System.out.println(arrayList);
+		}
+		System.out.println("Base Result = " + reservedResult);
 
 		double result = initBaseResult();
+		System.out.println("Result = " + result);
+		LinkedList<ArrayList<Factor>> clusters = new LinkedList<>(arrClusters);
 
 		LinkedList<Integer> orderedVariables = new LinkedList<>(softOrder);
 
 		// bucket order
+		int prev = 0;
 		while (!orderedVariables.isEmpty()) {
 			ArrayList<Factor> cluster = clusters.poll();
 			Variable var = nonEvidenceVars.get(orderedVariables.poll());
@@ -786,6 +796,10 @@ public class GraphicalModel {
 			for (Factor factor : cluster) {
 				if (!factor.isAllAssigned()) {
 					naaf++;
+				}
+				
+				if(!factor.inScope(var)) {
+					System.out.println("Really strange");
 				}
 			}
 
@@ -806,12 +820,27 @@ public class GraphicalModel {
 
 			Factor newFactor = Eliminator.Product(mentions);
 			newFactor = Eliminator.SumOut(newFactor, var);
+			
+			if (newFactor.numScopes() > prev) {
+				System.out.println("prev = " + prev + " now = " + newFactor.numScopes());
+			}
+			
+			if(newFactor.inScope(var)) {
+				System.out.println("Really strange");
+			}
 
-			if (0 == newFactor.numScopes()) {
+			if ((0 == newFactor.numScopes())) {
 				result *= newFactor.getTabelValue(0);
 				emptyFactorCount++;
 				continue;
 			}
+			
+			if(newFactor.isAllAssigned()) {
+				result *= newFactor.getTabelValue(newFactor.underlyVariableToTableIndex());
+				System.out.println(result);
+				continue;
+			}
+			
 			double Q = 1.0;
 			boolean putInNewBucket = false;
 			Iterator<Integer> carryVariableInt = orderedVariables.iterator();
@@ -871,7 +900,7 @@ public class GraphicalModel {
 			writer.println("Evidence loaded, and variables instantiation completed. "
 					+ model.evidenceCount + " evidence");
 			ArrayList<Integer> order = model.computeSoftOrder();
-			LinkedList<ArrayList<Factor>> clusters = model
+			ArrayList<ArrayList<Factor>> clusters = model
 					.generateSoftClusters(order);
 			writer.println("Ordering computed");
 			writer.println("Order:");

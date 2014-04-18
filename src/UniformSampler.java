@@ -4,12 +4,34 @@ import java.util.ArrayList;
 public class UniformSampler {
 	ArrayList<Variable> sampledVariables;
 	ArrayList<ArrayList<Double>> distributions;
-	ArrayList<Variable> afterSampleVariables;
+	ArrayList<Variable> nextSample;
 	
 	double Q = 1.0;
 	
 	public UniformSampler(ArrayList<Variable> variables) {
 		sampledVariables = variables;
+		nextSample = new ArrayList<>(sampledVariables);
+	}
+	
+	// use this before sample()
+	public ArrayList<Variable> nextEstimation(double nextZ) {
+		sample(nextZ);
+		
+		for (int i = 0; i < sampledVariables.size(); i++) {
+			nextSample.get(i).setEvidence(sampledVariables.get(i).value);
+		}
+		
+		return nextSample;
+	}
+	
+	public boolean isPresentSample(ArrayList<Variable> target) {
+		for (int i = 0; i < sampledVariables.size(); i++) {
+			if(target.get(i).value != sampledVariables.get(i).value) {
+				return false;
+			}
+		}
+		
+		return true;
 	}
 	
 	public void generateSamples() {

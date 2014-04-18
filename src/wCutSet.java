@@ -4,7 +4,7 @@ import java.util.LinkedList;
 import java.util.Set;
 
 public class wCutSet {
-	public static LinkedList<Variable> generateWCutSet(GraphicalModel model,
+	public static ArrayList<Variable> generateWCutSet(GraphicalModel model,
 			int w) {
 		model.computeOrder();
 
@@ -26,6 +26,14 @@ public class wCutSet {
 		}
 
 		boolean needRepeat = true;
+		boolean noClusterHasMoreThanWplusOne = true;
+		for (LinkedList<Variable> cluster : variableClusters) {
+			if (cluster.size() > w + 1) {
+				noClusterHasMoreThanWplusOne &= false;
+			}
+		}
+
+		needRepeat = !noClusterHasMoreThanWplusOne;
 
 		while (needRepeat) {
 			Variable varMostInClusters = model.nonEvidenceVars.get(0);
@@ -49,7 +57,7 @@ public class wCutSet {
 
 			// remove varMostInClusters from all clusters
 
-			boolean noClusterHasMoreThanWplusOne = true;
+			noClusterHasMoreThanWplusOne = true;
 			for (LinkedList<Variable> cluster : variableClusters) {
 				cluster.remove(varMostInClusters);
 				if (cluster.size() > w + 1) {
@@ -61,6 +69,6 @@ public class wCutSet {
 			needRepeat = !noClusterHasMoreThanWplusOne;
 		}
 
-		return X;
+		return new ArrayList<>(X);
 	}
 }

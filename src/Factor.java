@@ -169,6 +169,30 @@ public class Factor {
 		return index;
 	}
 	
+	public int variableAndValueToTableIndex(ArrayList<Variable> vars, int[] values) {
+		int multi = 1;
+		int index = 0;
+		
+		int[] realyValues = new int[values.length];
+		int count = 0;
+		
+		for (int i = 0; i < vars.size(); i++) {
+			for (int j = 0; j < variables.size(); j++) {
+				if(vars.get(i) == vars.get(j)) {
+					realyValues[j] = values[i];
+					count++;
+					break;
+				}
+			}
+		}
+		
+		if(count!= vars.size()) {
+			return -1;
+		}
+		
+		return variableValueToTableIndex(realyValues);
+	}
+	
 	public int underlyVariableToTableIndex() {
 		int[] values = new int[variables.size()];
 		for (int i = 0; i < variables.size(); i++) {
