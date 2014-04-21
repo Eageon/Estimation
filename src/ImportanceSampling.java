@@ -101,7 +101,6 @@ public class ImportanceSampling {
 				for (double z : model.lastFactor.table)
 					writer.println("Z = " + z);
 			} else {
-
 				writer.println("The probability of evidence = " + result);
 				writer.println("");
 				System.out.println("Empty Factor Count = "

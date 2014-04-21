@@ -248,6 +248,11 @@ public class Factor {
 //			System.exit(0);
 //		}
 	}
+	
+	// return this CPT's node variable
+	public Variable getNodeVariable() {
+		return variables.get(variables.size() - 1);
+	}
 
 	public void printFactor() {
 		for (Variable var : variables) {

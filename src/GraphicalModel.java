@@ -20,6 +20,11 @@ public class GraphicalModel {
 	// LinkedList<ArrayList<Factor>> clusters;
 	LinkedList<Variable> evidenceVars;
 	ArrayList<Variable> nonEvidenceVars;
+	
+	// soft version of elimination
+	ArrayList<Integer> softOrder;
+	ArrayList<ArrayList<Factor>> softClusters;
+	
 	int evidenceCount = 0;
 	Factor lastFactor;
 
@@ -640,7 +645,42 @@ public class GraphicalModel {
 		}
 	}
 
-	public void setSoftEvidence(LinkedList<Variable> avaiVariables,
+	public void setSoftEvidence(ArrayList<Variable> vars, int[] vals,
+			boolean clear) {
+		if (clear) {
+			for (Variable var : variables) {
+				var.isEvidence = false;
+				var.value = -1;
+			}
+		}
+
+		// align variable
+		int index = 0;
+		for (Variable var : vars) {
+			var.setSoftEvidence(vals[index]);
+			index++;
+		}
+	}
+
+	public void setSoftEvidence(ArrayList<Variable> vars,
+			ArrayList<Integer> vals, boolean clear) {
+		// erase all of the evidence marker of variables
+		if (clear) {
+			for (Variable var : variables) {
+				var.isEvidence = false;
+				var.value = -1;
+			}
+		}
+
+		// align variable
+		int index = 0;
+		for (Variable var : vars) {
+			var.setSoftEvidence(vals.get(index));
+			index++;
+		}
+	}
+
+	public void setSoftEvidence(ArrayList<Variable> avaiVariables,
 			ArrayList<Variable> vars, ArrayList<Integer> vals, boolean clear) {
 		// erase all of the evidence marker of variables
 		if (clear) {
@@ -775,6 +815,7 @@ public class GraphicalModel {
 			graph.get(var).clear();
 		}
 
+		softOrder = order;
 		return order;
 	}
 
@@ -807,7 +848,7 @@ public class GraphicalModel {
 					remainIter.remove();
 					continue;
 				}
-				
+
 				if (nextFactor.inScope(var)) {
 					mentions.add(nextFactor);
 					remainIter.remove();
@@ -835,6 +876,10 @@ public class GraphicalModel {
 
 		return baseResult;
 	}
+	
+	public double softBucketElimination() {
+		return softBucketElimination(softOrder, softClusters);
+	}
 
 	public double softBucketElimination(ArrayList<Integer> softOrder,
 			ArrayList<ArrayList<Factor>> arrClusters) {
@@ -846,7 +891,7 @@ public class GraphicalModel {
 		}
 		System.out.println("Base Result = " + reservedResult);
 
-		//double result = initBaseResult();
+		// double result = initBaseResult();
 		double result = reservedResult;
 		System.out.println("Result = " + result);
 		LinkedList<ArrayList<Factor>> clusters = new LinkedList<>(arrClusters);
@@ -902,7 +947,8 @@ public class GraphicalModel {
 			if ((0 == newFactor.numScopes())) {
 				result *= newFactor.getTabelValue(0);
 				emptyFactorCount++;
-				System.out.println("Only factor value = " + newFactor.getTabelValue(0));
+				System.out.println("Only factor value = "
+						+ newFactor.getTabelValue(0));
 				continue;
 			}
 
