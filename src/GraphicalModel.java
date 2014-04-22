@@ -988,6 +988,12 @@ public class GraphicalModel {
 		// finalize();
 		return result;
 	}
+	
+	public double runSoftProcess() {
+		ArrayList<Integer> order = computeSoftOrder();
+		ArrayList<ArrayList<Factor>> clusters = generateSoftClusters(order);
+		return softBucketElimination(order, clusters);
+	}
 
 	public static void usage() {
 		System.out.println("java  GraphicalModel " + "FILENAME");
