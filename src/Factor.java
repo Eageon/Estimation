@@ -201,6 +201,18 @@ public class Factor {
 		
 		return variableValueToTableIndex(values);
 	}
+	
+	public double underlyProbability() {
+		int[] values = new int[variables.size()];
+		for (int i = 0; i < variables.size(); i++) {
+			if(!variables.get(i).isEvidence) {
+				return -1;
+			}
+			values[i] = variables.get(i).value;
+		}
+		
+		return table.get(variableValueToTableIndex(values));
+	}
 
 	public void instantiateVariable(Variable var, int value) {
 
