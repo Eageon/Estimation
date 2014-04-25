@@ -53,6 +53,10 @@ public class Factor {
 		if (0 > num) {
 			return;
 		}
+		
+		if(null != table && table.size() == num) {
+			return;
+		}
 
 		table = new ArrayList<>(num);
 

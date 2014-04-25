@@ -44,6 +44,12 @@ public class Variable implements Comparable<Variable> {
 	}
 	
 	public void setSoftEvidence(int value) {
+		if(-1 == value) {
+			this.isEvidence = false;
+			this.value = -1;
+			return;
+		}
+		
 		this.isEvidence = true;
 		this.value = value;
 	}

@@ -14,7 +14,7 @@ public class GraphicalModel {
 	ArrayList<Factor> factors;
 
 	ArrayList<Variable> variables;
-	LinkedList<Factor> remainFactors;
+	ArrayList<Factor> remainFactors;
 
 	LinkedList<Variable> orderVariables;
 	// LinkedList<ArrayList<Factor>> clusters;
@@ -25,6 +25,8 @@ public class GraphicalModel {
 	ArrayList<Integer> softOrder;
 	ArrayList<ArrayList<Factor>> softClusters;
 	
+	BufferedReader reader = null;
+	
 	int evidenceCount = 0;
 	Factor lastFactor;
 
@@ -34,7 +36,11 @@ public class GraphicalModel {
 	String network;
 
 	public GraphicalModel(String fileName) {
-		buildModel(fileName);
+		this(fileName, true);
+	}
+	
+	public GraphicalModel(String fileName, boolean initTable) {
+		buildModel(fileName, initTable);
 	}
 
 	public Variable getVariable(int index) {
@@ -64,13 +70,23 @@ public class GraphicalModel {
 
 		factors.set(index, factor);
 	}
+	
+	public void initTabelWithoutSettingValue() {
+		for (Factor factor : factors) {
+			factor.initTable();
+		}
+	}
 
 	// @SuppressWarnings({ "null", "unused" })
-	private void buildMarkovNetwork(BufferedReader reader)
+	public void buildMarkovNetwork(BufferedReader reader, boolean initTable)
 			throws NumberFormatException, IOException {
 
-		buildVariableAndFactorWithValue(reader);
+		buildStructure(reader);
 
+		if(!initTable) {
+			return;
+		}
+		
 		// Then set CPT
 		int indexFactor = 0;
 		String head = null;
@@ -115,7 +131,7 @@ public class GraphicalModel {
 		}
 	}
 
-	private void buildVariableAndFactorWithValue(BufferedReader reader)
+	public void buildStructure(BufferedReader reader)
 			throws NumberFormatException, IOException {
 		int size = Integer.valueOf(reader.readLine());
 		numVariables = size;
@@ -181,10 +197,14 @@ public class GraphicalModel {
 		}
 	}
 
-	private void buildBayesianNetwork(BufferedReader reader)
+	public void buildBayesianNetwork(BufferedReader reader, boolean initTable)
 			throws NumberFormatException, IOException {
 
-		buildVariableAndFactorWithValue(reader);
+		buildStructure(reader);
+		
+		if(!initTable) {
+			return;
+		}
 
 		// Then set CPT / Factor
 		int indexFactor = 0;
@@ -244,10 +264,11 @@ public class GraphicalModel {
 
 	}
 
-	public void buildModel(String fileName) {
+	public void buildModel(String fileName, boolean initTable) {
 		BufferedReader reader = null;
 		try {
 			reader = new BufferedReader(new FileReader(fileName));
+			this.reader = reader;
 		} catch (FileNotFoundException e) {
 			System.out.println("Can NOT find file " + fileName);
 			System.exit(-1);
@@ -257,10 +278,10 @@ public class GraphicalModel {
 			String network = reader.readLine();
 			if (network.equals("MARKOV")) {
 				this.network = "MARKOV";
-				buildMarkovNetwork(reader);
+				buildMarkovNetwork(reader, initTable);
 			} else if (network.equals("BAYES")) {
 				this.network = "BAYES";
-				buildBayesianNetwork(reader);
+				buildBayesianNetwork(reader, initTable);
 			} else {
 				System.out.println("Wrong preamble " + network);
 			}
@@ -269,6 +290,9 @@ public class GraphicalModel {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		
+		nonEvidenceVars = variables;
+		remainFactors = factors;
 	}
 
 	public void readEvidence(String fileName) {
@@ -571,7 +595,6 @@ public class GraphicalModel {
 		}
 	}
 
-	@SuppressWarnings("unused")
 	private void validateVariables() {
 
 		// soft elimination you don't have to exec this function
@@ -588,7 +611,7 @@ public class GraphicalModel {
 
 	private void validateFactors() {
 		Iterator<Factor> iter = factors.iterator();
-		remainFactors = new LinkedList<>();
+		remainFactors = new ArrayList<>(factors.size());
 
 		int index = 0;
 		while (iter.hasNext()) {
@@ -655,10 +678,9 @@ public class GraphicalModel {
 		}
 
 		// align variable
-		int index = 0;
-		for (Variable var : vars) {
-			var.setSoftEvidence(vals[index]);
-			index++;
+		for (int i = 0; i < vars.size(); i++) {
+			Variable var = vars.get(i);
+			var.setSoftEvidence(vals[i]);
 		}
 	}
 
@@ -673,10 +695,14 @@ public class GraphicalModel {
 		}
 
 		// align variable
-		int index = 0;
-		for (Variable var : vars) {
-			var.setSoftEvidence(vals.get(index));
-			index++;
+//		int index = 0;
+//		for (Variable var : vars) {
+//			var.setSoftEvidence(vals.get(index));
+//			index++;
+//		}
+		for (int i = 0; i < vars.size(); i++) {
+			Variable var = vars.get(i);
+			var.setSoftEvidence(vals.get(i));
 		}
 	}
 
@@ -691,10 +717,9 @@ public class GraphicalModel {
 		}
 
 		// align variable
-		int index = 0;
-		for (Variable var : vars) {
-			var.setSoftEvidence(vals.get(index));
-			index++;
+		for (int i = 0; i < vars.size(); i++) {
+			Variable var = vars.get(i);
+			var.setSoftEvidence(vals.get(i));
 		}
 	}
 
@@ -763,10 +788,10 @@ public class GraphicalModel {
 			}
 		}
 
-		int tmp = 0;
-		for (Set<Integer> set : graph) {
-			System.out.println((tmp++) + ": " + set.size());
-		}
+		//int tmp = 0;
+		//for (Set<Integer> set : graph) {
+			//System.out.println((tmp++) + ": " + set.size());
+		//}
 
 		for (int i = 0; i < nne; i++) {
 			order.add(-1);
@@ -864,6 +889,7 @@ public class GraphicalModel {
 
 	// private double baseResult = 1.0;
 
+	@SuppressWarnings("unused")
 	private double initBaseResult() {
 		double baseResult = reservedResult;
 
@@ -886,14 +912,14 @@ public class GraphicalModel {
 
 		validateFactors();
 
-		for (ArrayList<Factor> arrayList : arrClusters) {
-			System.out.println(arrayList);
-		}
-		System.out.println("Base Result = " + reservedResult);
+//		for (ArrayList<Factor> arrayList : arrClusters) {
+//			System.out.println(arrayList);
+//		}
+		//System.out.println("Base Result = " + reservedResult);
 
 		// double result = initBaseResult();
 		double result = reservedResult;
-		System.out.println("Result = " + result);
+		//System.out.println("Result = " + result);
 		LinkedList<ArrayList<Factor>> clusters = new LinkedList<>(arrClusters);
 
 		LinkedList<Integer> orderedVariables = new LinkedList<>(softOrder);
@@ -936,8 +962,8 @@ public class GraphicalModel {
 			newFactor = Eliminator.SumOut(newFactor, var);
 
 			if (newFactor.numScopes() > prev) {
-				System.out.println("prev = " + prev + " now = "
-						+ newFactor.numScopes());
+				//System.out.println("prev = " + prev + " now = "
+				//		+ newFactor.numScopes());
 			}
 
 			if (newFactor.inScope(var)) {
@@ -947,15 +973,15 @@ public class GraphicalModel {
 			if ((0 == newFactor.numScopes())) {
 				result *= newFactor.getTabelValue(0);
 				emptyFactorCount++;
-				System.out.println("Only factor value = "
-						+ newFactor.getTabelValue(0));
+				//System.out.println("Only factor value = "
+				//		+ newFactor.getTabelValue(0));
 				continue;
 			}
 
 			if (newFactor.isAllAssigned()) {
 				result *= newFactor.getTabelValue(newFactor
 						.underlyVariableToTableIndex());
-				System.out.println(result);
+				//System.out.println(result);
 				continue;
 			}
 
