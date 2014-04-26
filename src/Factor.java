@@ -13,6 +13,11 @@ public class Factor {
 	public int numScopes() {
 		return variables.size();
 	}
+	
+	public Factor() {
+		variables = new ArrayList<>();
+		table = new ArrayList<>();
+	}
 
 	public Factor(int numScopes) {
 		if (0 > numScopes)

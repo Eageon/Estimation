@@ -9,7 +9,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Set;
 
-public class GraphicalModel {
+public class GraphicalModel implements Iterable<int[]> {
 	int numVariables;
 	ArrayList<Factor> factors;
 
@@ -41,6 +41,44 @@ public class GraphicalModel {
 	
 	public GraphicalModel(String fileName, boolean initTable) {
 		buildModel(fileName, initTable);
+	}
+	
+	public GraphicalModel(String fileName, boolean initFactor, boolean initTable) {
+		BufferedReader reader = null;
+		try {
+			reader = new BufferedReader(new FileReader(fileName));
+			this.reader = reader;
+		} catch (FileNotFoundException e) {
+			System.out.println("Can NOT find file " + fileName);
+			System.exit(-1);
+		}
+
+		try {
+			String network = reader.readLine();
+			if (network.equals("MARKOV")) {
+				this.network = "MARKOV";
+				buildMarkovNetwork(reader, initFactor, initTable);
+			} else if (network.equals("BAYES")) {
+				this.network = "BAYES";
+				buildBayesianNetwork(reader, initFactor, initTable);
+			} else {
+				System.out.println("Wrong preamble " + network);
+			}
+
+			reader.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		nonEvidenceVars = variables;
+		remainFactors = factors;
+	}
+	
+	public void clearEvidence() {
+		for (Variable var : variables) {
+			var.value = -1;
+			var.isEvidence = false;
+		}
 	}
 
 	public Variable getVariable(int index) {
@@ -78,10 +116,10 @@ public class GraphicalModel {
 	}
 
 	// @SuppressWarnings({ "null", "unused" })
-	public void buildMarkovNetwork(BufferedReader reader, boolean initTable)
+	public void buildMarkovNetwork(BufferedReader reader, boolean initFactor, boolean initTable)
 			throws NumberFormatException, IOException {
 
-		buildStructure(reader);
+		buildStructure(reader, initFactor);
 
 		if(!initTable) {
 			return;
@@ -131,7 +169,7 @@ public class GraphicalModel {
 		}
 	}
 
-	public void buildStructure(BufferedReader reader)
+	public void buildStructure(BufferedReader reader, boolean initFactor)
 			throws NumberFormatException, IOException {
 		int size = Integer.valueOf(reader.readLine());
 		numVariables = size;
@@ -152,6 +190,10 @@ public class GraphicalModel {
 			v.index = indexVar++;
 			v.prevIndex = v.index;
 			variables.add(v);
+		}
+		
+		if (!initFactor) {
+			return;
 		}
 
 		String line4 = reader.readLine();
@@ -197,10 +239,10 @@ public class GraphicalModel {
 		}
 	}
 
-	public void buildBayesianNetwork(BufferedReader reader, boolean initTable)
+	public void buildBayesianNetwork(BufferedReader reader, boolean initFactor, boolean initTable)
 			throws NumberFormatException, IOException {
 
-		buildStructure(reader);
+		buildStructure(reader, initFactor);
 		
 		if(!initTable) {
 			return;
@@ -278,10 +320,10 @@ public class GraphicalModel {
 			String network = reader.readLine();
 			if (network.equals("MARKOV")) {
 				this.network = "MARKOV";
-				buildMarkovNetwork(reader, initTable);
+				buildMarkovNetwork(reader, true, initTable);
 			} else if (network.equals("BAYES")) {
 				this.network = "BAYES";
-				buildBayesianNetwork(reader, initTable);
+				buildBayesianNetwork(reader, true, initTable);
 			} else {
 				System.out.println("Wrong preamble " + network);
 			}
@@ -1015,6 +1057,16 @@ public class GraphicalModel {
 		return result;
 	}
 	
+	public double probabilityEvidence() {
+		double result = reservedResult;
+		
+		for (Factor factor : factors) {
+			result *= factor.underlyProbability();
+		}
+		
+		return result;
+	}
+	
 	public double runSoftProcess() {
 		ArrayList<Integer> order = computeSoftOrder();
 		ArrayList<ArrayList<Factor>> clusters = generateSoftClusters(order);
@@ -1028,6 +1080,17 @@ public class GraphicalModel {
 	public static void runSoftElimination(String[] args) {
 		// TODO Auto-generated method stub
 
+	}
+	
+	public void initEmptyFactor() {
+		factors = new ArrayList<>(variables.size());
+		
+		for (int i = 0; i < variables.size(); i++) {
+			Factor factor = new Factor();
+			factor.index = i;
+			factor.variables.add(variables.get(i));  // node variable
+			factors.add(factor);
+		}
 	}
 
 	public static void main(String[] args) {
@@ -1078,5 +1141,54 @@ public class GraphicalModel {
 		System.out.println("Succeed!");
 		System.out.println("Output file is " + fileName + ".output");
 
+	}
+
+	// return the iteration of completion
+	@Override
+	public Iterator<int[]> iterator() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
+	public class CompletionIterator implements Iterator<int[]> {
+		
+		int[] values;
+		int[] domainSizes;
+		
+		int pointer = -1;
+		
+		public CompletionIterator(ArrayList<Variable> vars) {
+			values = new int[vars.size()];
+			domainSizes = new int[vars.size()];
+			for (int i = 0; i < vars.size(); i++) {
+				Variable var = vars.get(i);
+				
+				if (!var.isEvidence) {
+					values[i] = -1;
+				} else {
+					values[i] = var.value;
+				}
+				domainSizes[i] = var.domainSize();
+			}
+		}
+
+		@Override
+		public boolean hasNext() {
+			// TODO Auto-generated method stub
+			return false;
+		}
+
+		@Override
+		public int[] next() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public void remove() {
+			// TODO Auto-generated method stub
+			
+		}
+		
 	}
 }
