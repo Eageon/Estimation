@@ -14,9 +14,21 @@ public class ImportanceSampling {
 		ArrayList<Integer> softOrder = model.computeSoftOrder();
 		ArrayList<ArrayList<Factor>> clusters = model
 				.generateSoftClusters(softOrder);
+		
+		
 
 		int sample100 = 0;
+		model.clearEvidence();
 		ArrayList<Variable> nextSample = Q.nextEstimation(100 * 1.0 / N);
+		for (ArrayList<Factor> cluster : clusters) {
+			for (Factor factor : cluster) {
+				if(factor.numScopes() == 0 || factor.isAllAssigned()) {
+					System.out.println("zero factor");
+					System.out.println(factor.index);
+					System.exit(0);
+				}
+			}
+		}
 		ArrayList<Double> wCache = new ArrayList<>(100);
 		for (int i = 0; i < sample100; i++) {
 			wCache.add(0.0);
@@ -48,7 +60,7 @@ public class ImportanceSampling {
 					tmp++;
 
 					Q.Q = updateNumnomitor / updateDenomintor;
-
+					model.clearEvidence();
 					nextSample = Q.nextEstimation(tmp * 100 * (1.0 / N));
 				}
 			}
@@ -88,6 +100,7 @@ public class ImportanceSampling {
 					+ model.factors.size() + " factors");
 			writer.println(model.network + " network");
 			model.readEvidence(fileName + ".evid");
+			
 			writer.println("Evidence loaded, and variables instantiation completed. "
 					+ model.evidenceCount + " evidence");
 

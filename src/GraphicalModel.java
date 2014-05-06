@@ -957,7 +957,7 @@ public class GraphicalModel implements Iterable<int[]> {
 	public double softBucketElimination(ArrayList<Integer> softOrder,
 			ArrayList<ArrayList<Factor>> arrClusters) {
 
-		validateFactors();
+		//validateFactors();
 
 //		for (ArrayList<Factor> arrayList : arrClusters) {
 //			System.out.println(arrayList);
@@ -975,16 +975,22 @@ public class GraphicalModel implements Iterable<int[]> {
 		int prev = 0;
 		while (!orderedVariables.isEmpty()) {
 			ArrayList<Factor> cluster = clusters.poll();
-			Variable var = nonEvidenceVars.get(orderedVariables.poll());
+			int orderIndex = orderedVariables.poll();
+			Variable var = nonEvidenceVars.get(orderIndex);
+			//System.out.println("order index = " + orderIndex);
+			//System.out.println("var index = " + var.index);
 
 			int naaf = 0;
 			for (Factor factor : cluster) {
+				
 				if (!factor.isAllAssigned()) {
 					naaf++;
 				}
 
 				if (!factor.inScope(var)) {
-					System.out.println("Really strange");
+					System.out.println("Really strange first");
+					System.out.println(var);
+					System.out.println(factor.variables);
 				}
 			}
 
@@ -1014,7 +1020,7 @@ public class GraphicalModel implements Iterable<int[]> {
 			}
 
 			if (newFactor.inScope(var)) {
-				System.out.println("Really strange");
+				System.out.println("Really strange second");
 			}
 
 			if ((0 == newFactor.numScopes())) {

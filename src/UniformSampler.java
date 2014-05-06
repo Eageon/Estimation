@@ -18,7 +18,7 @@ public class UniformSampler {
 		sample(nextZ);
 		
 		for (int i = 0; i < sampledVariables.size(); i++) {
-			nextSample.get(i).setEvidence(sampledVariables.get(i).value);
+			nextSample.get(i).setSoftEvidence(sampledVariables.get(i).value);
 		}
 		
 		return nextSample;
