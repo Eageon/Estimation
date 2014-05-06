@@ -22,7 +22,7 @@ public class ImportanceSampling {
 		ArrayList<Variable> nextSample = Q.nextEstimation(100 * 1.0 / N);
 		for (ArrayList<Factor> cluster : clusters) {
 			for (Factor factor : cluster) {
-				if(factor.numScopes() == 0 || factor.isAllAssigned()) {
+				if(factor.numScopes() == 0) {
 					System.out.println("zero factor");
 					System.out.println(factor.index);
 					System.exit(0);
@@ -118,6 +118,7 @@ public class ImportanceSampling {
 				writer.println("");
 				System.out.println("Empty Factor Count = "
 						+ model.emptyFactorCount);
+				System.out.println("probe = " + model.probe);
 			}
 
 			long endTime = System.currentTimeMillis();

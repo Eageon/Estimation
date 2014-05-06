@@ -20,29 +20,30 @@ public class GraphicalModel implements Iterable<int[]> {
 	// LinkedList<ArrayList<Factor>> clusters;
 	LinkedList<Variable> evidenceVars;
 	ArrayList<Variable> nonEvidenceVars;
-	
+
 	// soft version of elimination
 	ArrayList<Integer> softOrder;
 	ArrayList<ArrayList<Factor>> softClusters;
-	
+
 	BufferedReader reader = null;
-	
+
 	int evidenceCount = 0;
 	Factor lastFactor;
 
 	double reservedResult = 1.0;
 	int emptyFactorCount = 0;
+	int probe = 0;
 
 	String network;
 
 	public GraphicalModel(String fileName) {
 		this(fileName, true);
 	}
-	
+
 	public GraphicalModel(String fileName, boolean initTable) {
 		buildModel(fileName, initTable);
 	}
-	
+
 	public GraphicalModel(String fileName, boolean initFactor, boolean initTable) {
 		BufferedReader reader = null;
 		try {
@@ -69,17 +70,17 @@ public class GraphicalModel implements Iterable<int[]> {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
+
 		nonEvidenceVars = variables;
 		remainFactors = factors;
 	}
-	
+
 	public void clearEvidence() {
 		for (Variable var : variables) {
 			var.value = -1;
 			var.isEvidence = false;
 		}
-		
+
 		for (Variable var : nonEvidenceVars) {
 			var.value = -1;
 			var.isEvidence = false;
@@ -113,7 +114,7 @@ public class GraphicalModel implements Iterable<int[]> {
 
 		factors.set(index, factor);
 	}
-	
+
 	public void initTabelWithoutSettingValue() {
 		for (Factor factor : factors) {
 			factor.initTable();
@@ -121,15 +122,15 @@ public class GraphicalModel implements Iterable<int[]> {
 	}
 
 	// @SuppressWarnings({ "null", "unused" })
-	public void buildMarkovNetwork(BufferedReader reader, boolean initFactor, boolean initTable)
-			throws NumberFormatException, IOException {
+	public void buildMarkovNetwork(BufferedReader reader, boolean initFactor,
+			boolean initTable) throws NumberFormatException, IOException {
 
 		buildStructure(reader, initFactor);
 
-		if(!initTable) {
+		if (!initTable) {
 			return;
 		}
-		
+
 		// Then set CPT
 		int indexFactor = 0;
 		String head = null;
@@ -196,7 +197,7 @@ public class GraphicalModel implements Iterable<int[]> {
 			v.prevIndex = v.index;
 			variables.add(v);
 		}
-		
+
 		if (!initFactor) {
 			return;
 		}
@@ -244,12 +245,12 @@ public class GraphicalModel implements Iterable<int[]> {
 		}
 	}
 
-	public void buildBayesianNetwork(BufferedReader reader, boolean initFactor, boolean initTable)
-			throws NumberFormatException, IOException {
+	public void buildBayesianNetwork(BufferedReader reader, boolean initFactor,
+			boolean initTable) throws NumberFormatException, IOException {
 
 		buildStructure(reader, initFactor);
-		
-		if(!initTable) {
+
+		if (!initTable) {
 			return;
 		}
 
@@ -337,7 +338,7 @@ public class GraphicalModel implements Iterable<int[]> {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
+
 		nonEvidenceVars = variables;
 		remainFactors = factors;
 	}
@@ -742,11 +743,11 @@ public class GraphicalModel implements Iterable<int[]> {
 		}
 
 		// align variable
-//		int index = 0;
-//		for (Variable var : vars) {
-//			var.setSoftEvidence(vals.get(index));
-//			index++;
-//		}
+		// int index = 0;
+		// for (Variable var : vars) {
+		// var.setSoftEvidence(vals.get(index));
+		// index++;
+		// }
 		for (int i = 0; i < vars.size(); i++) {
 			Variable var = vars.get(i);
 			var.setSoftEvidence(vals.get(i));
@@ -835,10 +836,10 @@ public class GraphicalModel implements Iterable<int[]> {
 			}
 		}
 
-		//int tmp = 0;
-		//for (Set<Integer> set : graph) {
-			//System.out.println((tmp++) + ": " + set.size());
-		//}
+		// int tmp = 0;
+		// for (Set<Integer> set : graph) {
+		// System.out.println((tmp++) + ": " + set.size());
+		// }
 
 		for (int i = 0; i < nne; i++) {
 			order.add(-1);
@@ -949,7 +950,7 @@ public class GraphicalModel implements Iterable<int[]> {
 
 		return baseResult;
 	}
-	
+
 	public double softBucketElimination() {
 		return softBucketElimination(softOrder, softClusters);
 	}
@@ -957,16 +958,18 @@ public class GraphicalModel implements Iterable<int[]> {
 	public double softBucketElimination(ArrayList<Integer> softOrder,
 			ArrayList<ArrayList<Factor>> arrClusters) {
 
-		//validateFactors();
+		// validateFactors();
 
-//		for (ArrayList<Factor> arrayList : arrClusters) {
-//			System.out.println(arrayList);
-//		}
-		//System.out.println("Base Result = " + reservedResult);
+		// for (ArrayList<Factor> arrayList : arrClusters) {
+		// System.out.println(arrayList);
+		// }
+		// System.out.println("Base Result = " + reservedResult);
 
 		// double result = initBaseResult();
 		double result = reservedResult;
-		//System.out.println("Result = " + result);
+		emptyFactorCount = 0;
+		probe = 0;
+		// System.out.println("Result = " + result);
 		LinkedList<ArrayList<Factor>> clusters = new LinkedList<>(arrClusters);
 
 		LinkedList<Integer> orderedVariables = new LinkedList<>(softOrder);
@@ -977,12 +980,12 @@ public class GraphicalModel implements Iterable<int[]> {
 			ArrayList<Factor> cluster = clusters.poll();
 			int orderIndex = orderedVariables.poll();
 			Variable var = nonEvidenceVars.get(orderIndex);
-			//System.out.println("order index = " + orderIndex);
-			//System.out.println("var index = " + var.index);
+			// System.out.println("order index = " + orderIndex);
+			// System.out.println("var index = " + var.index);
 
 			int naaf = 0;
 			for (Factor factor : cluster) {
-				
+
 				if (!factor.isAllAssigned()) {
 					naaf++;
 				}
@@ -1003,7 +1006,14 @@ public class GraphicalModel implements Iterable<int[]> {
 				if (!factor.isAllAssigned()) {
 					mentions.add(factor);
 				} else {
-					System.out.println("Little fish");
+					// System.out.println("Little fish");
+					//System.out.println(result);
+					result *= factor.underlyProbability();
+					if(result == 0.0) {
+						System.out.println(orderIndex);
+						System.out.println("first");
+					}
+					probe++;
 				}
 			}
 
@@ -1015,8 +1025,8 @@ public class GraphicalModel implements Iterable<int[]> {
 			newFactor = Eliminator.SumOut(newFactor, var);
 
 			if (newFactor.numScopes() > prev) {
-				//System.out.println("prev = " + prev + " now = "
-				//		+ newFactor.numScopes());
+				// System.out.println("prev = " + prev + " now = "
+				// + newFactor.numScopes());
 			}
 
 			if (newFactor.inScope(var)) {
@@ -1026,15 +1036,21 @@ public class GraphicalModel implements Iterable<int[]> {
 			if ((0 == newFactor.numScopes())) {
 				result *= newFactor.getTabelValue(0);
 				emptyFactorCount++;
-				//System.out.println("Only factor value = "
-				//		+ newFactor.getTabelValue(0));
+				if(result == 0.0) {
+					System.out.println("second");
+				}
+				// System.out.println("Only factor value = "
+				// + newFactor.getTabelValue(0));
 				continue;
 			}
 
 			if (newFactor.isAllAssigned()) {
 				result *= newFactor.getTabelValue(newFactor
 						.underlyVariableToTableIndex());
-				//System.out.println(result);
+				if(result == 0.0) {
+					System.out.println("third");
+				}
+				// System.out.println(result);
 				continue;
 			}
 
@@ -1065,19 +1081,21 @@ public class GraphicalModel implements Iterable<int[]> {
 		// this.evidenceVars = evidenceVarsAfterElim;
 		// prune();
 		// finalize();
+		System.out.println("Empty Factor Count = " + emptyFactorCount);
+		System.out.println("probe = " + probe);
 		return result;
 	}
-	
+
 	public double probabilityEvidence() {
 		double result = reservedResult;
-		
+
 		for (Factor factor : factors) {
 			result *= factor.underlyProbability();
 		}
-		
+
 		return result;
 	}
-	
+
 	public double runSoftProcess() {
 		ArrayList<Integer> order = computeSoftOrder();
 		ArrayList<ArrayList<Factor>> clusters = generateSoftClusters(order);
@@ -1092,14 +1110,14 @@ public class GraphicalModel implements Iterable<int[]> {
 		// TODO Auto-generated method stub
 
 	}
-	
+
 	public void initEmptyFactor() {
 		factors = new ArrayList<>(variables.size());
-		
+
 		for (int i = 0; i < variables.size(); i++) {
 			Factor factor = new Factor();
 			factor.index = i;
-			factor.variables.add(variables.get(i));  // node variable
+			factor.variables.add(variables.get(i)); // node variable
 			factors.add(factor);
 		}
 	}
@@ -1160,20 +1178,20 @@ public class GraphicalModel implements Iterable<int[]> {
 		// TODO Auto-generated method stub
 		return null;
 	}
-	
+
 	public class CompletionIterator implements Iterator<int[]> {
-		
+
 		int[] values;
 		int[] domainSizes;
-		
+
 		int pointer = -1;
-		
+
 		public CompletionIterator(ArrayList<Variable> vars) {
 			values = new int[vars.size()];
 			domainSizes = new int[vars.size()];
 			for (int i = 0; i < vars.size(); i++) {
 				Variable var = vars.get(i);
-				
+
 				if (!var.isEvidence) {
 					values[i] = -1;
 				} else {
@@ -1198,8 +1216,8 @@ public class GraphicalModel implements Iterable<int[]> {
 		@Override
 		public void remove() {
 			// TODO Auto-generated method stub
-			
+
 		}
-		
+
 	}
 }
