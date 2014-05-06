@@ -6,6 +6,7 @@ public class ImportanceSampling {
 
 	public double startSampling(GraphicalModel model, int w, int N,
 			boolean isAdaptive) {
+		ArrayList<Variable> topOrder = model.topologicalOrder();
 		ArrayList<Variable> cutSet = wCutSet.generateWCutSet(model, w);
 		UniformSampler Q = new UniformSampler(cutSet);
 		Q.generateSamples();
@@ -20,6 +21,7 @@ public class ImportanceSampling {
 		int sample100 = 0;
 		model.clearEvidence();
 		ArrayList<Variable> nextSample = Q.nextEstimation(100 * 1.0 / N);
+		model.clearEvidence();
 		for (ArrayList<Factor> cluster : clusters) {
 			for (Factor factor : cluster) {
 				if (factor.numScopes() == 0) {
@@ -44,35 +46,37 @@ public class ImportanceSampling {
 
 			double numerator = model.softBucketElimination(softOrder, clusters);
 			double frame = 0.0;
-			
-				System.out.println(i);
-				System.out.println(Q.computeQ());
-				System.out.println(numerator);
-			
+
 			if (Q.computeQ() != 0.0) {
 				frame = numerator / Q.computeQ();
 			}
 
-			if(frame == Double.POSITIVE_INFINITY) {
+			if (frame == Double.POSITIVE_INFINITY) {
 				System.out.println(i);
 				System.out.println(Q.computeQ());
 				System.exit(0);
 			}
+			System.out.println(i);
+			System.out.println(z);
+			System.out.println(Q.computeQ());
+			System.out.println(numerator);
+			System.out.println(frame);
 			Z += frame;
 
 			if (isAdaptive) {
-
+				updateDenomintor += frame;
+				sample100++;
 				if (Q.isPresentSample(nextSample)) {
 					updateNumnomitor += frame;
+					System.out.println("Always present");
 				}
-
-				updateDenomintor += frame;
-
-				sample100++;
 				if (sample100 == 100 * tmp) {
+					System.out.println("adapt");
 					tmp++;
 					if (updateDenomintor != 0.0 && updateNumnomitor != 0.0) {
 						Q.Q = updateNumnomitor / updateDenomintor;
+						updateDenomintor = 0.0;
+						updateNumnomitor = 0.0;
 					}
 					model.clearEvidence();
 					nextSample = Q.nextEstimation(tmp * 100 * (1.0 / N));

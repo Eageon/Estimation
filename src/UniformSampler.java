@@ -42,7 +42,7 @@ public class UniformSampler {
 			double d = 1.0 / var.domainSize();
 			ArrayList<Double> dist = new ArrayList<>(var.domainSize());
 			for (int j = 0; j < var.domainSize(); j++) {
-				dist.add((i + 1) * d);  // should be one?
+				dist.add((j + 1) * d);  // should be one?
 			}
 			dist.set(var.domainSize() - 1, 1.0);
 			distributions.add(dist);
@@ -64,7 +64,7 @@ public class UniformSampler {
 			for (int j = 0; j < dist.size(); j++) {
 				if(t < dist.get(j)) {
 					var.setSoftEvidence(j);
-					continue;
+					break;
 				}
 			}
 		}

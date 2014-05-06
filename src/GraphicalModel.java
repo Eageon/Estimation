@@ -790,6 +790,68 @@ public class GraphicalModel implements Iterable<int[]> {
 		return tempResult;
 	}
 
+	public ArrayList<Variable> topologicalOrder() {
+		ArrayList<Variable> copyVariables = new ArrayList<>(nonEvidenceVars);
+		ArrayList<Factor> copyFactors = new ArrayList<>(remainFactors.size());
+		for (int i = 0; i < remainFactors.size(); i++) {
+			Factor oneFactorCopy = new Factor(remainFactors.get(i).variables);
+			oneFactorCopy.index = i;
+			copyFactors.add(oneFactorCopy);
+		}
+
+		ArrayList<Variable> topOrder = new ArrayList<>(nonEvidenceVars.size());
+		if (network.equals("BAYES")) {
+			while (!copyFactors.isEmpty()) {
+				// find a node that doesn't have parent
+				Factor thisFactor = copyFactors.get(0);
+				for (Factor factor : copyFactors) {
+					if (1 == factor.numScopes()) {
+						thisFactor = factor;
+						break;
+					}
+				}
+				copyFactors.remove(thisFactor);
+
+				// remove edge from remaining factor
+				Variable nodeVariable = thisFactor.getNodeVariable();
+				for (Factor factor : copyFactors) {
+					if (factor.variables.contains(nodeVariable)
+							&& nodeVariable != factor.getNodeVariable()) {
+						factor.variables.remove(nodeVariable);
+					}
+				}
+				topOrder.add(nodeVariable);
+			}
+		} else { // markov network
+			while(!copyVariables.isEmpty()) {
+				// find variable then remove it
+				Factor thisFactor = null;
+				for (Iterator<Factor> iterator = copyFactors.iterator(); iterator
+						.hasNext();) {
+					Factor factor = (Factor) iterator.next();
+					if(1 == factor.numScopes()) {
+						iterator.remove();
+						thisFactor = factor;
+						break;
+					}
+				}
+				
+				Variable nodeVariable = thisFactor.getNodeVariable();
+				copyVariables.remove(nodeVariable);
+				for (Iterator<Factor> iterator = copyFactors.iterator(); iterator
+						.hasNext();) {
+					Factor factor = (Factor) iterator.next();
+					if (factor.variables.contains(nodeVariable)) {
+						 iterator.remove();
+					}
+				}
+				topOrder.add(nodeVariable);
+			}
+		}
+
+		return topOrder;
+	}
+
 	public ArrayList<Integer> computeSoftOrder() {
 		// number of non-evidence variables
 		int nne = 0;
@@ -957,18 +1019,10 @@ public class GraphicalModel implements Iterable<int[]> {
 	public double softBucketElimination(ArrayList<Integer> softOrder,
 			ArrayList<ArrayList<Factor>> arrClusters) {
 
-		// validateFactors();
-
-		// for (ArrayList<Factor> arrayList : arrClusters) {
-		// System.out.println(arrayList);
-		// }
-		// System.out.println("Base Result = " + reservedResult);
-
-		// double result = initBaseResult();
 		double result = reservedResult;
 		emptyFactorCount = 0;
 		probe = 0;
-		// System.out.println("Result = " + result);
+
 		LinkedList<ArrayList<Factor>> clusters = new LinkedList<>();
 		// need deep copy
 		for (ArrayList<Factor> oneCluster : arrClusters) {
@@ -985,16 +1039,17 @@ public class GraphicalModel implements Iterable<int[]> {
 			Variable var = nonEvidenceVars.get(orderIndex);
 			// System.out.println("order index = " + orderIndex);
 			// System.out.println("var index = " + var.index);
-			
-			// if var is soft evidence, then deliver all the factor in this bucket to 
+
+			// if var is soft evidence, then deliver all the factor in this
+			// bucket to
 			// other non-evidence bucket.
-//			if(var.isEvidence) {
-//				for (Factor factor : cluster) {
-//					
-//				}
-//				
-//				continue;
-//			}
+			// if(var.isEvidence) {
+			// for (Factor factor : cluster) {
+			//
+			// }
+			//
+			// continue;
+			// }
 
 			int naaf = 0;
 			for (Factor factor : cluster) {
@@ -1022,11 +1077,11 @@ public class GraphicalModel implements Iterable<int[]> {
 					// System.out.println("Little fish");
 					// System.out.println(result);
 					result *= factor.underlyProbability();
-					if(result == Double.POSITIVE_INFINITY) {
+					if (result == Double.POSITIVE_INFINITY) {
 						System.out.println("Infinity Result first");
 						System.exit(0);
 					}
-					if(result == 0.0) {
+					if (result == 0.0) {
 						System.out.println(orderIndex);
 						System.out.println("first");
 					}
@@ -1052,12 +1107,12 @@ public class GraphicalModel implements Iterable<int[]> {
 
 			if ((0 == newFactor.numScopes())) {
 				result *= newFactor.getTabelValue(0);
-				if(result == Double.POSITIVE_INFINITY) {
+				if (result == Double.POSITIVE_INFINITY) {
 					System.out.println("Infinity second");
 					System.exit(0);
 				}
 				emptyFactorCount++;
-				if(result == 0.0) {
+				if (result == 0.0) {
 					System.out.println("second");
 				}
 				// System.out.println("Only factor value = "
@@ -1068,11 +1123,11 @@ public class GraphicalModel implements Iterable<int[]> {
 			if (newFactor.isAllAssigned()) {
 				result *= newFactor.getTabelValue(newFactor
 						.underlyVariableToTableIndex());
-				if(result == Double.POSITIVE_INFINITY) {
+				if (result == Double.POSITIVE_INFINITY) {
 					System.out.println("Infinity Result third");
 					System.exit(0);
 				}
-				if(result == 0.0) {
+				if (result == 0.0) {
 					System.out.println("third");
 				}
 				// System.out.println(result);
@@ -1106,9 +1161,9 @@ public class GraphicalModel implements Iterable<int[]> {
 		// this.evidenceVars = evidenceVarsAfterElim;
 		// prune();
 		// finalize();
-		//System.out.println("Empty Factor Count = " + emptyFactorCount);
-		//System.out.println("probe = " + probe);
-		if(result == Double.POSITIVE_INFINITY) {
+		// System.out.println("Empty Factor Count = " + emptyFactorCount);
+		// System.out.println("probe = " + probe);
+		if (result == Double.POSITIVE_INFINITY) {
 			System.out.println("Infinity Result");
 			System.exit(0);
 		}

@@ -27,7 +27,7 @@ public class Factor {
 	}
 
 	public Factor(ArrayList<Variable> vars) {
-		variables = vars;
+		variables = new ArrayList<>(vars);
 	}
 
 	public void initTable() {
