@@ -27,7 +27,7 @@ public class ImportanceSampling {
 		int tmp = 1;
 		for (int i = 1; i < N; i++) {
 			double z = i * (1.0 / N);
-			@SuppressWarnings("unused")
+			model.clearEvidence();
 			ArrayList<Variable> softEvidence = Q.sample(z);
 
 			double numerator = model.softBucketElimination(softOrder, clusters);

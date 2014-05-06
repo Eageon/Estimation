@@ -79,6 +79,11 @@ public class GraphicalModel implements Iterable<int[]> {
 			var.value = -1;
 			var.isEvidence = false;
 		}
+		
+		for (Variable var : nonEvidenceVars) {
+			var.value = -1;
+			var.isEvidence = false;
+		}
 	}
 
 	public Variable getVariable(int index) {
