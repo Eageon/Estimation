@@ -133,7 +133,16 @@ public class Eliminator {
 				int xTableIndex = xFactor.variableValueToTableIndex(primeValues);
 				// the multiply two double;
 				
-				fRet.table.set(z, fRet.table.get(z) * xFactor.table.get(xTableIndex));			
+				
+				//System.out.println(z);
+				double record = fRet.getTabelValue(z);
+				double newValue = fRet.table.get(z) * xFactor.table.get(xTableIndex);				
+				if(newValue == Double.POSITIVE_INFINITY) {
+					System.out.println("Infinity Result at product");
+					System.out.println(z);
+					System.exit(0);
+				}
+				fRet.table.set(z, newValue);
 			}
 		}
 		
@@ -248,6 +257,10 @@ public class Eliminator {
 			for(int k = 0; k < var.domainSize(); k++) {
 				value += factor.getTabelValue(base + k * num);
 			}
+			if(value == Double.POSITIVE_INFINITY) {
+				System.out.println("Infinity Result at sumout");
+				System.exit(0);
+			}
 			
 			fRet.setTableValue(i, value);
 			if(fRet.table.get(i) == 2.0) {
@@ -269,9 +282,6 @@ public class Eliminator {
 				base += num;
 				count = 0;
 			}
-//			else {
-//				base++;
-//			}
 		}
 		
 		//fRet.index = factorCount;

@@ -14,7 +14,7 @@ public class ImportanceSampling {
 		Q.sample(0.5);
 		ArrayList<Integer> softOrder = model.computeSoftOrder();
 		ArrayList<ArrayList<Factor>> clusters = model
-				.generateSoftClusters(softOrder);	
+				.generateSoftClusters(softOrder);
 		model.clearEvidence();
 
 		int sample100 = 0;
@@ -22,7 +22,7 @@ public class ImportanceSampling {
 		ArrayList<Variable> nextSample = Q.nextEstimation(100 * 1.0 / N);
 		for (ArrayList<Factor> cluster : clusters) {
 			for (Factor factor : cluster) {
-				if(factor.numScopes() == 0) {
+				if (factor.numScopes() == 0) {
 					System.out.println("zero factor");
 					System.out.println(factor.index);
 					System.exit(0);
@@ -43,23 +43,37 @@ public class ImportanceSampling {
 			ArrayList<Variable> softEvidence = Q.sample(z);
 
 			double numerator = model.softBucketElimination(softOrder, clusters);
-			double frame = numerator / Q.computeQ();
+			double frame = 0.0;
+			
+				System.out.println(i);
+				System.out.println(Q.computeQ());
+				System.out.println(numerator);
+			
+			if (Q.computeQ() != 0.0) {
+				frame = numerator / Q.computeQ();
+			}
 
+			if(frame == Double.POSITIVE_INFINITY) {
+				System.out.println(i);
+				System.out.println(Q.computeQ());
+				System.exit(0);
+			}
 			Z += frame;
 
 			if (isAdaptive) {
-				
-				if(Q.isPresentSample(nextSample)) {
+
+				if (Q.isPresentSample(nextSample)) {
 					updateNumnomitor += frame;
 				}
-				
+
 				updateDenomintor += frame;
 
 				sample100++;
 				if (sample100 == 100 * tmp) {
 					tmp++;
-
-					Q.Q = updateNumnomitor / updateDenomintor;
+					if (updateDenomintor != 0.0 && updateNumnomitor != 0.0) {
+						Q.Q = updateNumnomitor / updateDenomintor;
+					}
 					model.clearEvidence();
 					nextSample = Q.nextEstimation(tmp * 100 * (1.0 / N));
 				}
@@ -100,7 +114,7 @@ public class ImportanceSampling {
 					+ model.factors.size() + " factors");
 			writer.println(model.network + " network");
 			model.readEvidence(fileName + ".evid");
-			
+
 			writer.println("Evidence loaded, and variables instantiation completed. "
 					+ model.evidenceCount + " evidence");
 
@@ -111,8 +125,7 @@ public class ImportanceSampling {
 			writer.println("");
 			writer.println("====================RESULT========================");
 			if (model.network.equals("MARKOV")) {
-				for (double z : model.lastFactor.table)
-					writer.println("Z = " + z);
+				writer.println("Z = " + result);
 			} else {
 				writer.println("The probability of evidence = " + result);
 				writer.println("");

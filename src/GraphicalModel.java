@@ -121,7 +121,6 @@ public class GraphicalModel implements Iterable<int[]> {
 		}
 	}
 
-	// @SuppressWarnings({ "null", "unused" })
 	public void buildMarkovNetwork(BufferedReader reader, boolean initFactor,
 			boolean initTable) throws NumberFormatException, IOException {
 
@@ -970,7 +969,11 @@ public class GraphicalModel implements Iterable<int[]> {
 		emptyFactorCount = 0;
 		probe = 0;
 		// System.out.println("Result = " + result);
-		LinkedList<ArrayList<Factor>> clusters = new LinkedList<>(arrClusters);
+		LinkedList<ArrayList<Factor>> clusters = new LinkedList<>();
+		// need deep copy
+		for (ArrayList<Factor> oneCluster : arrClusters) {
+			clusters.add(new ArrayList<>(oneCluster));
+		}
 
 		LinkedList<Integer> orderedVariables = new LinkedList<>(softOrder);
 
@@ -1017,8 +1020,12 @@ public class GraphicalModel implements Iterable<int[]> {
 					mentions.add(factor);
 				} else {
 					// System.out.println("Little fish");
-					//System.out.println(result);
+					// System.out.println(result);
 					result *= factor.underlyProbability();
+					if(result == Double.POSITIVE_INFINITY) {
+						System.out.println("Infinity Result first");
+						System.exit(0);
+					}
 					if(result == 0.0) {
 						System.out.println(orderIndex);
 						System.out.println("first");
@@ -1045,6 +1052,10 @@ public class GraphicalModel implements Iterable<int[]> {
 
 			if ((0 == newFactor.numScopes())) {
 				result *= newFactor.getTabelValue(0);
+				if(result == Double.POSITIVE_INFINITY) {
+					System.out.println("Infinity second");
+					System.exit(0);
+				}
 				emptyFactorCount++;
 				if(result == 0.0) {
 					System.out.println("second");
@@ -1057,6 +1068,10 @@ public class GraphicalModel implements Iterable<int[]> {
 			if (newFactor.isAllAssigned()) {
 				result *= newFactor.getTabelValue(newFactor
 						.underlyVariableToTableIndex());
+				if(result == Double.POSITIVE_INFINITY) {
+					System.out.println("Infinity Result third");
+					System.exit(0);
+				}
 				if(result == 0.0) {
 					System.out.println("third");
 				}
@@ -1091,8 +1106,12 @@ public class GraphicalModel implements Iterable<int[]> {
 		// this.evidenceVars = evidenceVarsAfterElim;
 		// prune();
 		// finalize();
-		System.out.println("Empty Factor Count = " + emptyFactorCount);
-		System.out.println("probe = " + probe);
+		//System.out.println("Empty Factor Count = " + emptyFactorCount);
+		//System.out.println("probe = " + probe);
+		if(result == Double.POSITIVE_INFINITY) {
+			System.out.println("Infinity Result");
+			System.exit(0);
+		}
 		return result;
 	}
 
