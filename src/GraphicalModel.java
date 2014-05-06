@@ -982,6 +982,16 @@ public class GraphicalModel implements Iterable<int[]> {
 			Variable var = nonEvidenceVars.get(orderIndex);
 			// System.out.println("order index = " + orderIndex);
 			// System.out.println("var index = " + var.index);
+			
+			// if var is soft evidence, then deliver all the factor in this bucket to 
+			// other non-evidence bucket.
+//			if(var.isEvidence) {
+//				for (Factor factor : cluster) {
+//					
+//				}
+//				
+//				continue;
+//			}
 
 			int naaf = 0;
 			for (Factor factor : cluster) {

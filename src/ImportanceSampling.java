@@ -11,11 +11,11 @@ public class ImportanceSampling {
 		Q.generateSamples();
 
 		double Z = 0.0;
+		Q.sample(0.5);
 		ArrayList<Integer> softOrder = model.computeSoftOrder();
 		ArrayList<ArrayList<Factor>> clusters = model
-				.generateSoftClusters(softOrder);
-		
-		
+				.generateSoftClusters(softOrder);	
+		model.clearEvidence();
 
 		int sample100 = 0;
 		model.clearEvidence();

@@ -256,6 +256,12 @@ public class Eliminator {
 						", i = " + i + ", " + "value = " + value);
 			}
 			
+			if(fRet.table.get(i) == 3.0) {
+				System.out.println("var = " + var.index + ", domain = " + var.domainSize() + ", table0 = " + factor.getTabelValue(0) + 
+						", num = " + num + ", base = " + base + 
+						", i = " + i + ", " + "value = " + value);
+			}
+			
 			i++;
 			count++;
 			base++;
