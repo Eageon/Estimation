@@ -133,7 +133,6 @@ public class Eliminator {
 				int xTableIndex = xFactor.variableValueToTableIndex(primeValues);
 				// the multiply two double;
 				
-				
 				//System.out.println(z);
 				double record = fRet.getTabelValue(z);
 				double newValue = fRet.table.get(z) * xFactor.table.get(xTableIndex);				
@@ -245,7 +244,6 @@ public class Eliminator {
 		Factor fRet = new Factor(varsAfterElim);
 		fRet.initTable();
 		//fRet.tableZeros();
-		
 		
 		int i = 0;
 		int count = 0;

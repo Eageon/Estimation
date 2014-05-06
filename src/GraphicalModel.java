@@ -19,6 +19,8 @@ public class GraphicalModel implements Iterable<int[]> {
 	LinkedList<Variable> orderVariables;
 	// LinkedList<ArrayList<Factor>> clusters;
 	LinkedList<Variable> evidenceVars;
+	LinkedList<Variable> softEvidenceVariables = new LinkedList<>();
+	LinkedList<Integer> softEvidenceValues = new LinkedList<>();
 	ArrayList<Variable> nonEvidenceVars;
 
 	// soft version of elimination
@@ -456,7 +458,8 @@ public class GraphicalModel implements Iterable<int[]> {
 
 				Variable variable = variables.get(indexVariable);
 				variable.setSoftEvidence(value); // setEvidence will intantiate
-													// // factor
+				softEvidenceVariables.add(variable); // // factor
+				softEvidenceValues.add(value);
 			}
 		} catch (NumberFormatException e) {
 			e.printStackTrace();
@@ -474,6 +477,18 @@ public class GraphicalModel implements Iterable<int[]> {
 		nonEvidenceVars = variables;
 		// validateVariables();
 		validateFactors();
+	}
+
+	// resume the evidence that read from UAI, but not program set
+	public void resumeSoftEvidence() {
+		Iterator<Variable> varIter = softEvidenceVariables.iterator();
+		Iterator<Integer> valIter = softEvidenceValues.iterator();
+
+		while (varIter.hasNext()) {
+			Variable var = varIter.next();
+			Integer val = valIter.next();
+			var.setSoftEvidence(val);
+		}
 	}
 
 	/**
@@ -823,26 +838,26 @@ public class GraphicalModel implements Iterable<int[]> {
 				topOrder.add(nodeVariable);
 			}
 		} else { // markov network
-			while(!copyVariables.isEmpty()) {
+			while (!copyVariables.isEmpty()) {
 				// find variable then remove it
 				Factor thisFactor = null;
 				for (Iterator<Factor> iterator = copyFactors.iterator(); iterator
 						.hasNext();) {
 					Factor factor = (Factor) iterator.next();
-					if(1 == factor.numScopes()) {
+					if (1 == factor.numScopes()) {
 						iterator.remove();
 						thisFactor = factor;
 						break;
 					}
 				}
-				
+
 				Variable nodeVariable = thisFactor.getNodeVariable();
 				copyVariables.remove(nodeVariable);
 				for (Iterator<Factor> iterator = copyFactors.iterator(); iterator
 						.hasNext();) {
 					Factor factor = (Factor) iterator.next();
 					if (factor.variables.contains(nodeVariable)) {
-						 iterator.remove();
+						iterator.remove();
 					}
 				}
 				topOrder.add(nodeVariable);
@@ -1023,6 +1038,8 @@ public class GraphicalModel implements Iterable<int[]> {
 		emptyFactorCount = 0;
 		probe = 0;
 
+		ArrayList<Factor> afterFactors = new ArrayList<>(this.remainFactors);
+
 		LinkedList<ArrayList<Factor>> clusters = new LinkedList<>();
 		// need deep copy
 		for (ArrayList<Factor> oneCluster : arrClusters) {
@@ -1037,19 +1054,6 @@ public class GraphicalModel implements Iterable<int[]> {
 			ArrayList<Factor> cluster = clusters.poll();
 			int orderIndex = orderedVariables.poll();
 			Variable var = nonEvidenceVars.get(orderIndex);
-			// System.out.println("order index = " + orderIndex);
-			// System.out.println("var index = " + var.index);
-
-			// if var is soft evidence, then deliver all the factor in this
-			// bucket to
-			// other non-evidence bucket.
-			// if(var.isEvidence) {
-			// for (Factor factor : cluster) {
-			//
-			// }
-			//
-			// continue;
-			// }
 
 			int naaf = 0;
 			for (Factor factor : cluster) {
@@ -1093,8 +1097,12 @@ public class GraphicalModel implements Iterable<int[]> {
 				continue;
 			}
 
+			for (Factor factor : mentions) {
+				afterFactors.remove(factor);
+			}
 			Factor newFactor = Eliminator.Product(mentions);
 			newFactor = Eliminator.SumOut(newFactor, var);
+			afterFactors.add(newFactor);
 
 			if (newFactor.numScopes() > prev) {
 				// System.out.println("prev = " + prev + " now = "
@@ -1167,6 +1175,19 @@ public class GraphicalModel implements Iterable<int[]> {
 			System.out.println("Infinity Result");
 			System.exit(0);
 		}
+
+		if (network.equals("MARKOV")) {
+			double marResult = 1.0;
+			for (Factor factor : afterFactors) {
+				if (0 == factor.numScopes()) {
+					marResult *= factor.getTabelValue(0);
+				} else {
+					
+				}
+			}
+			return marResult;
+		}
+
 		return result;
 	}
 

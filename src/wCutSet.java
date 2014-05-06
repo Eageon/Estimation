@@ -6,11 +6,11 @@ import java.util.Set;
 public class wCutSet {
 	public static ArrayList<Variable> generateWCutSet(GraphicalModel model,
 			int w) {
-		model.computeOrder();
+		ArrayList<Integer> softOrder = model.computeSoftOrder();
 
 		LinkedList<Variable> X = new LinkedList<>();
 
-		LinkedList<ArrayList<Factor>> factorClusters = model.generateClusters();
+		ArrayList<ArrayList<Factor>> factorClusters = model.generateSoftClusters(softOrder);
 		ArrayList<LinkedList<Variable>> variableClusters = new ArrayList<>();
 
 		for (ArrayList<Factor> factorCluster : factorClusters) {

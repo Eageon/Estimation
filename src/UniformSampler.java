@@ -1,21 +1,25 @@
 import java.util.ArrayList;
+import java.util.Random;
 
 
 public class UniformSampler {
 	ArrayList<Variable> sampledVariables;
 	ArrayList<ArrayList<Double>> distributions;
 	ArrayList<Variable> nextSample;
+	ArrayList<Variable> sampleTopOrder;
+	Random random;
 	
 	double Q = 1.0;
 	
 	public UniformSampler(ArrayList<Variable> variables) {
-		sampledVariables = variables;
+		sampledVariables = new ArrayList<>(variables);
 		nextSample = new ArrayList<>(sampledVariables);
+		random = new Random();
 	}
 	
 	// use this before sample()
 	public ArrayList<Variable> nextEstimation(double nextZ) {
-		sample(nextZ);
+		sample();
 		
 		for (int i = 0; i < sampledVariables.size(); i++) {
 			nextSample.get(i).setSoftEvidence(sampledVariables.get(i).value);
@@ -32,6 +36,16 @@ public class UniformSampler {
 		}
 		
 		return true;
+	}
+	
+	public void overallTopOrderToSampleTopOrder(ArrayList<Variable> overallTopOrder) {
+		sampleTopOrder = new ArrayList<>(sampledVariables);
+		
+		for (Variable variable : overallTopOrder) {
+			if(sampledVariables.contains(variable)) {
+				sampleTopOrder.add(variable);
+			}
+		}
 	}
 	
 	public void generateSamples() {
@@ -55,12 +69,12 @@ public class UniformSampler {
 		}
 	}
 	
-	public ArrayList<Variable> sample(double t) {
-		
+	public ArrayList<Variable> sample() {
+			
 		for (int i = 0; i < sampledVariables.size(); i++) {
 			Variable var = sampledVariables.get(i);
 			ArrayList<Double> dist = distributions.get(i);
-			
+			double t = random.nextDouble();
 			for (int j = 0; j < dist.size(); j++) {
 				if(t < dist.get(j)) {
 					var.setSoftEvidence(j);
@@ -74,9 +88,18 @@ public class UniformSampler {
 	
 	// executed after sample()
 	public double computeQ() {
-		
-		
+		double Q = 1.0;
+		for (Variable variable : sampledVariables) {
+			Q *= distributions.get(variable.index).get(variable.value);
+		}
 		return Q;
+	}
+	
+	public void clearEvidence() {
+		for (Variable variable : sampledVariables) {
+			variable.isEvidence = false;
+			variable.value = -1;
+		}
 	}
 }
 

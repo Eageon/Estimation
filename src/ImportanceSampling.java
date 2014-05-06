@@ -9,19 +9,20 @@ public class ImportanceSampling {
 		ArrayList<Variable> topOrder = model.topologicalOrder();
 		ArrayList<Variable> cutSet = wCutSet.generateWCutSet(model, w);
 		UniformSampler Q = new UniformSampler(cutSet);
+		Q.overallTopOrderToSampleTopOrder(topOrder);
 		Q.generateSamples();
-
+		
 		double Z = 0.0;
-		Q.sample(0.5);
+		Q.sample();
 		ArrayList<Integer> softOrder = model.computeSoftOrder();
 		ArrayList<ArrayList<Factor>> clusters = model
 				.generateSoftClusters(softOrder);
-		model.clearEvidence();
+		Q.clearEvidence();
 
 		int sample100 = 0;
-		model.clearEvidence();
+		Q.clearEvidence();
 		ArrayList<Variable> nextSample = Q.nextEstimation(100 * 1.0 / N);
-		model.clearEvidence();
+		Q.clearEvidence();
 		for (ArrayList<Factor> cluster : clusters) {
 			for (Factor factor : cluster) {
 				if (factor.numScopes() == 0) {
@@ -41,16 +42,14 @@ public class ImportanceSampling {
 		int tmp = 1;
 		for (int i = 1; i < N; i++) {
 			double z = i * (1.0 / N);
-			model.clearEvidence();
-			ArrayList<Variable> softEvidence = Q.sample(z);
+			Q.clearEvidence();
+			ArrayList<Variable> softEvidence = Q.sample();
 
 			double numerator = model.softBucketElimination(softOrder, clusters);
 			double frame = 0.0;
-
-			if (Q.computeQ() != 0.0) {
-				frame = numerator / Q.computeQ();
-			}
-
+	
+			frame = numerator / Q.computeQ();
+			
 			if (frame == Double.POSITIVE_INFINITY) {
 				System.out.println(i);
 				System.out.println(Q.computeQ());
@@ -78,7 +77,7 @@ public class ImportanceSampling {
 						updateDenomintor = 0.0;
 						updateNumnomitor = 0.0;
 					}
-					model.clearEvidence();
+					Q.clearEvidence();
 					nextSample = Q.nextEstimation(tmp * 100 * (1.0 / N));
 				}
 			}
@@ -117,7 +116,7 @@ public class ImportanceSampling {
 					+ model.variables.size() + " variables, "
 					+ model.factors.size() + " factors");
 			writer.println(model.network + " network");
-			model.readEvidence(fileName + ".evid");
+			model.readSoftEvidence(fileName + ".evid");
 
 			writer.println("Evidence loaded, and variables instantiation completed. "
 					+ model.evidenceCount + " evidence");
