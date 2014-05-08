@@ -866,6 +866,16 @@ public class GraphicalModel implements Iterable<int[]> {
 
 		return topOrder;
 	}
+	
+	public ArrayList<Variable> orderIntToOrderVar(ArrayList<Integer> orderInt) {
+		ArrayList<Variable> orderVar = new ArrayList<>(orderInt.size());
+		
+		for (Integer integer : orderInt) {
+			orderVar.add(nonEvidenceVars.get(integer));
+		}
+		
+		return orderVar;
+	}
 
 	public ArrayList<Integer> computeSoftOrder() {
 		// number of non-evidence variables
@@ -1039,6 +1049,7 @@ public class GraphicalModel implements Iterable<int[]> {
 		probe = 0;
 
 		ArrayList<Factor> afterFactors = new ArrayList<>(this.remainFactors);
+		
 
 		LinkedList<ArrayList<Factor>> clusters = new LinkedList<>();
 		// need deep copy
@@ -1121,7 +1132,7 @@ public class GraphicalModel implements Iterable<int[]> {
 				}
 				emptyFactorCount++;
 				if (result == 0.0) {
-					System.out.println("second");
+					//System.out.println("second");
 				}
 				// System.out.println("Only factor value = "
 				// + newFactor.getTabelValue(0));
@@ -1175,16 +1186,57 @@ public class GraphicalModel implements Iterable<int[]> {
 			System.out.println("Infinity Result");
 			System.exit(0);
 		}
-
+		
+		// some node might be disconnected from grapg, handle them
+		
+		for (Factor factor : afterFactors) {
+			for (Variable variable : factor.variables) {
+				if(!variable.isEvidence) {
+					System.out.println("Need inference again");
+					
+				}
+			}
+		}
+		
+		int zeros = 0;
+		int ones = 0;
+		int twos = 0;
+		LinkedList<Factor> twosFactor = new LinkedList<>();
+		LinkedList<Variable> dup = new LinkedList<>();
 		if (network.equals("MARKOV")) {
 			double marResult = 1.0;
 			for (Factor factor : afterFactors) {
 				if (0 == factor.numScopes()) {
 					marResult *= factor.getTabelValue(0);
+					zeros++;
+				} else if (1 == factor.numScopes()) {
+					Variable var = factor.getNodeVariable();
+					if(dup.contains(var)) {
+						continue;
+					}
+					marResult *= factor.underlyProbability();
+					dup.add(var);
+					ones++;
 				} else {
-					
+					//System.out.println("Need inference");
+					//marResult *= factor.underlyProbability();
+					twos++;
+					twosFactor.add(factor);
 				}
 			}
+			System.out.println("zeros:" + zeros);
+			System.out.println("ones: " + ones);
+			System.out.println("twos:" + twos);
+//			for (Factor factor : twosFactor) {
+//				for (Variable variable : factor.variables) {
+//					System.out.print(variable.index + " ");
+//					if (!variable.isEvidence) {
+//						System.out.println("Oops");
+//						System.exit(0);
+//					}
+//				}
+//				System.out.println();
+//			}
 			return marResult;
 		}
 
@@ -1235,6 +1287,7 @@ public class GraphicalModel implements Iterable<int[]> {
 
 		String fileName = args[0];
 
+		long startTime = System.currentTimeMillis();
 		try {
 			PrintStream writer = new PrintStream(fileName + ".output");
 			GraphicalModel model = new GraphicalModel(fileName);
@@ -1268,6 +1321,9 @@ public class GraphicalModel implements Iterable<int[]> {
 				System.out.println("Empty Factor Count = "
 						+ model.emptyFactorCount);
 			}
+			long endTime = System.currentTimeMillis();
+			writer.println("Running Time = " + (double) (endTime - startTime)
+					/ 1000 + "secs");
 			writer.close();
 		} catch (IOException e) {
 			e.printStackTrace();

@@ -3,12 +3,16 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 
 public class ImportanceSampling {
+	ArrayList<Variable> cutset;
 
 	public double startSampling(GraphicalModel model, int w, int N,
 			boolean isAdaptive) {
 		ArrayList<Variable> topOrder = model.topologicalOrder();
 		ArrayList<Variable> cutSet = wCutSet.generateWCutSet(model, w);
+		this.cutset = cutSet;
+		System.out.println(cutSet.size());
 		UniformSampler Q = new UniformSampler(cutSet);
+		Q.model = model;
 		Q.overallTopOrderToSampleTopOrder(topOrder);
 		Q.generateSamples();
 		
@@ -33,6 +37,7 @@ public class ImportanceSampling {
 			}
 		}
 		ArrayList<Double> wCache = new ArrayList<>(100);
+		ArrayList<int[]> valsCache = new ArrayList<>(100);
 		for (int i = 0; i < sample100; i++) {
 			wCache.add(0.0);
 		}
@@ -74,8 +79,6 @@ public class ImportanceSampling {
 					tmp++;
 					if (updateDenomintor != 0.0 && updateNumnomitor != 0.0) {
 						Q.Q = updateNumnomitor / updateDenomintor;
-						updateDenomintor = 0.0;
-						updateNumnomitor = 0.0;
 					}
 					Q.clearEvidence();
 					nextSample = Q.nextEstimation(tmp * 100 * (1.0 / N));

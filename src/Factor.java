@@ -178,6 +178,10 @@ public class Factor {
 		return index;
 	}
 	
+	public double variableValueToProbability(int[] values) {
+		return table.get(variableValueToTableIndex(values));
+	}
+	
 	public int variableAndValueToTableIndex(ArrayList<Variable> vars, int[] values) {
 		int[] realyValues = new int[values.length];
 		int count = 0;

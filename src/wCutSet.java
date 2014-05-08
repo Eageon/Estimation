@@ -68,6 +68,12 @@ public class wCutSet {
 			needRepeat = !noClusterHasMoreThanWplusOne;
 		}
 
+		int max = 0;
+		for (LinkedList<Variable> linkedList : variableClusters) {
+			if(linkedList.size() > max) {
+				max = linkedList.size();
+			}
+		}
 		return new ArrayList<>(X);
 	}
 }
